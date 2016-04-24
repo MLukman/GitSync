@@ -1,0 +1,9 @@
+<h2>{{path}}</h2>
+
+<div class="ui message">
+Please wait for a few seconds for this path to be set up with Git repository ...
+</div>
+
+<script>
+window.location = {{app.path('repo_init', {'repoid':repoid})|json_encode|raw}};
+</script>

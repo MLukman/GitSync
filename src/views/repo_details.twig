@@ -1,0 +1,24 @@
+<h2>{{path}}</h2>
+<table class="ui celled striped sortable table">
+	<thead>
+		<tr>
+			<th>Checkout</th>
+			<th>Timestamp</th>
+			<th>SHA</th>
+			<th>Message</th>
+		</tr>
+	</thead>
+	<tbody>
+	{% for commit in commits %}
+		<tr{% if commit == head %} class="active"{% endif %}>
+			<td class="ui center aligned">{% if commit == head %}<i class="ui check square icon"></i>
+				{% else %}
+				<a href="{{app.path('repo_checkout', {'repoid': repoid, 'ref': commit.getSHA()})}}" class="ui button">Checkout</a>
+				{% endif %}</td>
+			<td class="collapsing">{{commit.getDatetimeCommitter().format('Y-m-d H:i:s')}}</td>
+			<td>{{commit.getSHA(true)}}</td>
+			<td>{{commit.getMessage()}}</td>
+		</tr>
+	{% endfor %}
+	</tbody>
+</table>

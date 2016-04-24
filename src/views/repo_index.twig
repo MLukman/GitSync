@@ -1,0 +1,17 @@
+<h2>All Repositories</h2>
+<table class="ui celled striped sortable table">
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>Path</th>
+		</tr>
+	</thead>
+	<tbody>
+	{% for name,repo in repos %}
+		<tr>
+			<td><a href="{{app.path('repo_details', {'repoid': name})}}">{{name}}</a></td>
+			<td>{{repo.getPath}}</td>
+		</tr>
+	{% endfor %}
+	</tbody>
+</table>

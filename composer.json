@@ -1,0 +1,21 @@
+{
+	"license": "GPL",
+	"authors": [
+		{
+			"name": "Muhammad Lukman Nasaruddin",
+			"email": "lukman.nasaruddin@tm.com.my"
+		}
+	],
+	"require": {
+		"twig/twig": "1.*",
+		"silex/silex": "~1.3",
+		"cypresslab/gitelephant": "1.*",
+		"symfony/security": "*",
+		"symfony/ldap": "*"
+	},
+	"autoload": {
+		"psr-4": {
+			"GitSync\\": "src/classes/"
+		}
+	}
+}
