@@ -1,17 +1,22 @@
-<h2>All Repositories</h2>
-<table class="ui celled striped sortable table">
-	<thead>
-		<tr>
-			<th>Name</th>
-			<th>Path</th>
-		</tr>
-	</thead>
-	<tbody>
-	{% for name,repo in repos %}
-		<tr>
-			<td><a href="{{app.path('repo_details', {'repoid': name})}}">{{name}}</a></td>
-			<td>{{repo.getPath}}</td>
-		</tr>
-	{% endfor %}
-	</tbody>
-</table>
+<h1 class="ui header">
+	<i class="database icon"></i>
+	<div class="content">All contexts</div>
+</h1>
+
+{% for name,context in contexts %}
+<div class="ui item segment">
+	<h2 class="header">
+		<a href="{{app.path('repo_details', {'repoid': name})}}">{{name}}</a>
+	</h2>
+	<div class="ui right floated description">
+		<p>{{context.getPath}}</p>
+	</div>
+	{% if context.isDirty() %}
+	<a class="ui red top right attached label">Unsync</a>
+	{% elseif not context.isLatest() %}
+	<a class="ui orange top right attached label">Outdated</a>
+	{% else %}
+	<a class="ui green top right attached label">OK</a>
+	{% endif %}
+</div>
+{% endfor %}

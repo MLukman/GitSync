@@ -1,23 +1,40 @@
-<h2>{{path}}</h2>
+<h1 class="ui header">
+	<i class="sitemap icon"></i>
+	<div class="content">{{repoid}} [{{path}}]</div>
+</h1>
+
+{% if repoStatus.count() %}
+<h2>Unsync</h2>
+<p>The following modifications have been found:</p>
+<ul>
+{% set desc = {'': 'Staged', 'M': 'Modified', 'A': 'Added', 'D': 'Deleted', 'R': 'Renamed', 'C': 'Copied', '?': 'New'} %}
+{% for status in repoStatus %}
+<li>({{desc[status.getWorkingTreeStatus()]}}) {{status.getName()}}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<h2>Revisions</h2>
 <table class="ui celled striped sortable table">
 	<thead>
 		<tr>
-			<th>Checkout</th>
 			<th>Timestamp</th>
 			<th>SHA</th>
-			<th>Message</th>
+			<th colspan="2">Message</th>
 		</tr>
 	</thead>
 	<tbody>
 	{% for commit in commits %}
 		<tr{% if commit == head %} class="active"{% endif %}>
-			<td class="ui center aligned">{% if commit == head %}<i class="ui check square icon"></i>
-				{% else %}
-				<a href="{{app.path('repo_checkout', {'repoid': repoid, 'ref': commit.getSHA()})}}" class="ui button">Checkout</a>
-				{% endif %}</td>
 			<td class="collapsing">{{commit.getDatetimeCommitter().format('Y-m-d H:i:s')}}</td>
-			<td>{{commit.getSHA(true)}}</td>
+			<td class="collapsing">{{commit.getSHA(true)}}</td>
 			<td>{{commit.getMessage()}}</td>
+			<td class="ui center aligned collapsing">
+				{% if commit == head and not isDirty %}
+				<i class="ui check square icon"></i>
+				{% else %}
+				<a href="{{app.path('repo_checkout', {'repoid': repoid, 'ref': commit.getSHA()})}}" class="ui primary button">Restore</a>
+				{% endif %}</td>
 		</tr>
 	{% endfor %}
 	</tbody>

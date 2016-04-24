@@ -18,7 +18,7 @@ class Repo extends \GitSync\Base\Controller
     {
         return $this->renderDisplay('repo_index',
                 array(
-                'repos' => $this->app['config']->getContexts(),
+                'contexts' => $this->app['config']->getContexts(),
         ));
     }
 
@@ -57,6 +57,7 @@ class Repo extends \GitSync\Base\Controller
                 'path' => $context->getPath(),
                 'isDirty' => $repo->isDirty(),
                 'head' => $repo->getCommit(),
+                'repoStatus' => $repo->getStatus()->all(),
                 'commits' => $repo->getLog('master', null, 25)->toArray(),
         ));
     }
@@ -64,7 +65,7 @@ class Repo extends \GitSync\Base\Controller
     public function checkout(Request $request, $repoid, $ref)
     {
         $context = $this->getContext($repoid);
-        $repo       = $context->getRepo();
+        $repo    = $context->getRepo();
         $repo->fetch($context->getRemote()->getName());
         if ($repo->isDirty()) {
             $repo->hardReset();
