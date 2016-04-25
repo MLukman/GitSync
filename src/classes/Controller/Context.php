@@ -55,9 +55,9 @@ class Context extends \GitSync\Base\Controller
                 array(
                 'ctxid' => $ctxid,
                 'context' => $context,
-                'head' => $repo->getCommit(),
+                'head' => $context->getHead(),
                 'repoStatus' => $repo->getStatus()->all(),
-                'commits' => $repo->getLog('master', null, 10)->toArray(),
+                'commits' => $context->getLogArray(10),
         ));
     }
 

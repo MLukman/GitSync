@@ -179,6 +179,25 @@ class Context
     public function isLatest()
     {
         $repo = $this->getRepo();
-        return $repo->getCommit('HEAD') == $repo->getLog('master', null, 1)->first();
+        return $repo->getCommit('HEAD') == $repo->getBranch($this->branch)->getLastCommit();
+    }
+
+    /**
+     * Get the HEAD commit
+     * @return \GitElephant\Objects\Commit
+     */
+    public function getHead()
+    {
+        return $this->getRepo()->getCommit('HEAD');
+    }
+
+    /**
+     * Get the list of last few commits in the selected branch
+     * @param int $limit Number of commits to return, default to 10
+     * @return \GitElephant\Objects\Commit[]
+     */
+    public function getLogArray($limit = 10)
+    {
+        return $this->getRepo()->getLog($this->branch, null, $limit)->toArray();
     }
 }

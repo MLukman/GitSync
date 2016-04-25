@@ -3,11 +3,12 @@
 	<div class="content">{{ctxid}} [{{context.getPath()}}]</div>
 </h1>
 
+<a class="ui basic blue label"><i class="fork icon"></i>{{context.getBranch()}}</a>
 {% if context.isDirty() %}
-<a class="ui red label">Unsync</a>
+<a class="ui red label"><i class="warning sign icon"></i>Unsync</a>
 {% endif %}
 {% if not context.isLatest() %}
-<a class="ui orange label">Outdated</a>
+<a class="ui orange label"><i class="warning sign icon"></i>Outdated</a>
 {% endif %}
 
 {% if repoStatus.count() %}

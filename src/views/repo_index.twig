@@ -12,11 +12,11 @@
 		<p>{{context.getPath}}</p>
 	</div>
 	{% if context.isDirty() %}
-	<a class="ui red top right attached label">Unsync</a>
+	<a class="ui red top right attached label"><i class="warning sign icon"></i>Unsync</a>
 	{% elseif not context.isLatest() %}
-	<a class="ui orange top right attached label">Outdated</a>
+	<a class="ui orange top right attached label"><i class="warning sign icon"></i>Outdated</a>
 	{% else %}
-	<a class="ui green top right attached label">OK</a>
+	<a class="ui green top right attached label"><i class="check circle icon">OK</a>
 	{% endif %}
 </div>
 {% endfor %}
