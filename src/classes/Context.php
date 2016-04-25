@@ -194,10 +194,30 @@ class Context
     /**
      * Get the list of last few commits in the selected branch
      * @param int $limit Number of commits to return, default to 10
-     * @return \GitElephant\Objects\Commit[]
+     * @return \GitSync\Revision[]
      */
-    public function getLogArray($limit = 10)
+    public function getLatestRevisions($limit = 10)
     {
-        return $this->getRepo()->getLog($this->branch, null, $limit)->toArray();
+        $repo = $this->getRepo();
+        $tags = array();
+        foreach ($repo->getTags() as $tag) {
+            $sha = $tag->getSha();
+            if (!isset($tags[$sha])) {
+                $tags[$sha] = array();
+            }
+            $tags[$sha][] = $tag;
+        }
+        $revisions = array();
+        foreach ($repo->getLog($this->branch, null, $limit) as $commit) {
+            $rev = new Revision($commit);
+            $sha = $commit->getSHA();
+            if (isset($tags[$sha])) {
+                foreach ($tags[$sha] as $tag) {
+                    $rev->addTag($tag->getName());
+                }
+            }
+            $revisions[] = $rev;
+        }
+        return $revisions;
     }
 }

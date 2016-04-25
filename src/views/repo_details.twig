@@ -27,24 +27,30 @@
 	<thead>
 		<tr>
 			<th>Timestamp</th>
-			<th>SHA</th>
+			<th>Tag/SHA</th>
 			<th colspan="2">Message</th>
 		</tr>
 	</thead>
 	<tbody>
-	{% for commit in commits %}
-		{% if commit.getSHA() %}
-		<tr{% if commit == head %} class="active"{% endif %}>
-			<td class="collapsing">{{commit.getDatetimeCommitter().format('Y-m-d H:i:s')}}</td>
-			<td class="collapsing">{{commit.getSHA(true)}}</td>
-			<td>{{commit.getMessage()}}</td>
+	{% for revision in revisions %}
+		{% if revision.getSHA() %}
+		<tr{% if revision.getCommit().getSHA() == head.getSHA() %} class="active"{% endif %}>
+			<td class="collapsing">{{revision.getDate().format('Y-m-d H:i:s')}}</td>
+			<td class="collapsing">
+			{% for tag in revision.getTags() %}<span class="ui tag label">{{tag}}</span>
+			{% else %}{{revision.getSHA(true)}}
+			{% endfor %}
+			</td>
+			<td>{{revision.getMessage()}}</td>
 			<td class="ui center aligned collapsing">
-				{% if commit == head and not context.isDirty() %}
-				<i class="ui check square icon"></i>
+				{% if revision.getCommit() == head and not context.isDirty() %}
+				<i class="ui check square icon"></i>OK
 				{% else %}
-				<a href="{{app.path('context_checkout', {'ctxid': ctxid, 'ref': commit.getSHA()})}}" class="ui primary button">Restore</a>
+				<a href="{{app.path('context_checkout', {'ctxid': ctxid, 'ref': revision.getSHA()})}}" class="ui primary button">Restore</a>
 				{% endif %}</td>
 		</tr>
+		{% else %}
+		<tr><td colspan="4">Unable to load revision details -- something is wrong!</td></tr>
 		{% endif %}
 	{% endfor %}
 	</tbody>

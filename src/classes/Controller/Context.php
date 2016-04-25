@@ -57,7 +57,7 @@ class Context extends \GitSync\Base\Controller
                 'context' => $context,
                 'head' => $context->getHead(),
                 'repoStatus' => $repo->getStatus()->all(),
-                'commits' => $context->getLogArray(10),
+                'revisions' => $context->getLatestRevisions(),
         ));
     }
 
