@@ -2,6 +2,8 @@
 
 namespace GitSync;
 
+define('ROOT_PATH', 'context_index');
+
 use Symfony\Component\HttpFoundation\Request;
 
 class Application extends \Silex\Application
@@ -32,9 +34,6 @@ class Application extends \Silex\Application
 
         /* Auth controllers */
         $app->mount('/auth', new \GitSync\Provider\AuthControllerProvider());
-
-        /* Repo controllers */
-        $app->mount('/repo', new \GitSync\Provider\RepoControllerProvider());
 
         /* Root controller */
         $app->mount('/', new \GitSync\Provider\RootControllerProvider());

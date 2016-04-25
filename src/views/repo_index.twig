@@ -6,7 +6,7 @@
 {% for name,context in contexts %}
 <div class="ui item segment">
 	<h2 class="header">
-		<a href="{{app.path('repo_details', {'repoid': name})}}">{{name}}</a>
+		<a href="{{app.path('context_details', {'ctxid': name})}}">{{name}}</a>
 	</h2>
 	<div class="ui right floated description">
 		<p>{{context.getPath}}</p>

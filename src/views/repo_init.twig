@@ -1,6 +1,6 @@
 <h1 class="ui header">
 	<i class="sitemap icon"></i>
-	<div class="content">{{repoid}} [{{path}}]</div>
+	<div class="content">{{ctxid}} [{{path}}]</div>
 </h1>
 
 <div class="ui message">
@@ -8,5 +8,5 @@ Please wait for a few seconds for this path to be set up with Git repository ...
 </div>
 
 <script>
-window.location = {{app.path('repo_init', {'repoid':repoid})|json_encode|raw}};
+window.location = {{app.path('context_init', {'ctxid':ctxid})|json_encode|raw}};
 </script>

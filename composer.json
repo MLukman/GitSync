@@ -1,17 +1,19 @@
 {
+	"name": "mlukman/gitsync",
 	"license": "GPL",
+	"keywords": ["git","sync"],
+	"homepage": "https://github.com/MLukman/GitSync",
 	"authors": [
 		{
 			"name": "Muhammad Lukman Nasaruddin",
-			"email": "lukman.nasaruddin@tm.com.my"
+			"email": "anatilmizun@gmail.com"
 		}
 	],
 	"require": {
-		"twig/twig": "1.*",
-		"silex/silex": "~1.3",
-		"cypresslab/gitelephant": "1.*",
-		"symfony/security": "*",
-		"symfony/ldap": "*"
+		"php": ">=5.4.0"
+		, "silex/silex": "~1.3"
+		, "twig/twig": "1.*"
+		, "cypresslab/gitelephant": "1.*"
 	},
 	"autoload": {
 		"psr-4": {

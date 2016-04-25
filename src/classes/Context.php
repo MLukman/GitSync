@@ -10,7 +10,7 @@ class Context
 {
     /**
      * Git repo manager object
-     * @var \GitElephant\Repository
+     * @var \GitSync\Repository
      */
     protected $repo;
 
@@ -33,16 +33,25 @@ class Context
     protected $branch;
 
     /**
+     * The list of user ids who can manage this context
+     * @var string[]
+     */
+    protected $allowedUids;
+
+    /**
      * Constructor
      * @param string $path The filesystem path pointing to the directory
      * @param string $remote_url The git remote URL
      * @param string $branch The branch name to track, default to 'master'
+     * @param array $allowedUids The list of user ids who can manage this context
      */
-    public function __construct($path, $remote_url, $branch = 'master')
+    public function __construct($path, $remote_url, $branch = 'master',
+                                array $allowedUids = array())
     {
         $this->path        = realpath($path);
         $this->remote_url  = $remote_url;
         $this->branch      = $branch;
+        $this->allowedUids = array_values($allowedUids);
     }
 
     /**
@@ -73,9 +82,9 @@ class Context
     }
 
     /**
-     * Retrieve an instance of \GitElephant\Repository object associated with
+     * Retrieve an instance of \GitSync\Repository object associated with
      * this context's path
-     * @return \GitElephant\Repository
+     * @return \GitSync\Repository
      */
     public function getRepo()
     {
@@ -84,7 +93,7 @@ class Context
             if (strncasecmp(PHP_OS, 'WIN', 3) == 0) {
                 $gitbin = '"C:\Program Files\Git\bin\git.exe"';
             }
-            $this->repo = new \GitElephant\Repository($this->path,
+            $this->repo = new \GitSync\Repository($this->path,
                 new \GitElephant\GitBinary($gitbin)
             );
         }
@@ -108,6 +117,16 @@ class Context
             }
             throw $e;
         }
+    }
+
+    /**
+     * Check if a specific user id is allowed to manage this context
+     * @param string $uid User id
+     * @return bool
+     */
+    public function isUidAllowed($uid)
+    {
+        return in_array($uid, $this->allowedUids);
     }
 
     /**

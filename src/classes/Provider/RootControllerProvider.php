@@ -9,14 +9,20 @@ class RootControllerProvider implements \Silex\ControllerProviderInterface
     {
         $controllers = $app['controllers_factory'];
 
-        $app['root.controller'] = $app->share(function() use ($app) {
-            return new \GitSync\Controller\Root($app);
+        $app['context.controller'] = $app->share(function() use ($app) {
+            return new \GitSync\Controller\Context($app);
         });
 
-        $controllers->get('/', 'root.controller:index')->bind('root');
+        $controllers->get('/ctx/{ctxid}/init/', 'context.controller:init')->bind('context_init');
+        $controllers->get('/ctx/{ctxid}/checkout/{ref}',
+            'context.controller:checkout')->bind('context_checkout');
+        $controllers->get('/ctx/{ctxid}/', 'context.controller:details')->bind('context_details');
+        $controllers->get('/', 'context.controller:index')->bind('context_index');
+
         $app['acl']
-            ->allowAll('root')
+            ->allowAll('context_')
         ;
+
         return $controllers;
     }
 }

@@ -1,7 +1,14 @@
 <h1 class="ui header">
 	<i class="sitemap icon"></i>
-	<div class="content">{{repoid}} [{{path}}]</div>
+	<div class="content">{{ctxid}} [{{context.getPath()}}]</div>
 </h1>
+
+{% if context.isDirty() %}
+<a class="ui red label">Unsync</a>
+{% endif %}
+{% if not context.isLatest() %}
+<a class="ui orange label">Outdated</a>
+{% endif %}
 
 {% if repoStatus.count() %}
 <h2>Unsync</h2>
@@ -25,17 +32,19 @@
 	</thead>
 	<tbody>
 	{% for commit in commits %}
+		{% if commit.getSHA() %}
 		<tr{% if commit == head %} class="active"{% endif %}>
 			<td class="collapsing">{{commit.getDatetimeCommitter().format('Y-m-d H:i:s')}}</td>
 			<td class="collapsing">{{commit.getSHA(true)}}</td>
 			<td>{{commit.getMessage()}}</td>
 			<td class="ui center aligned collapsing">
-				{% if commit == head and not isDirty %}
+				{% if commit == head and not context.isDirty() %}
 				<i class="ui check square icon"></i>
 				{% else %}
-				<a href="{{app.path('repo_checkout', {'repoid': repoid, 'ref': commit.getSHA()})}}" class="ui primary button">Restore</a>
+				<a href="{{app.path('context_checkout', {'ctxid': ctxid, 'ref': commit.getSHA()})}}" class="ui primary button">Restore</a>
 				{% endif %}</td>
 		</tr>
+		{% endif %}
 	{% endfor %}
 	</tbody>
 </table>

@@ -5,7 +5,7 @@ namespace GitSync\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
-class Repo extends \GitSync\Base\Controller
+class Context extends \GitSync\Base\Controller
 {
 
     public function __construct(\Silex\Application $app)
@@ -22,13 +22,13 @@ class Repo extends \GitSync\Base\Controller
         ));
     }
 
-    public function details(Request $request, $repoid)
+    public function details(Request $request, $ctxid)
     {
-        $context = $this->getContext($repoid);
+        $context = $this->getContext($ctxid);
         if (!$context->isInitialized()) {
             return $this->renderDisplay('repo_init',
                     array(
-                    'repoid' => $repoid,
+                    'ctxid' => $ctxid,
                     'path' => $context->getPath(),
             ));
         }
@@ -53,35 +53,34 @@ class Repo extends \GitSync\Base\Controller
 
         return $this->renderDisplay('repo_details',
                 array(
-                'repoid' => $repoid,
-                'path' => $context->getPath(),
-                'isDirty' => $repo->isDirty(),
+                'ctxid' => $ctxid,
+                'context' => $context,
                 'head' => $repo->getCommit(),
                 'repoStatus' => $repo->getStatus()->all(),
-                'commits' => $repo->getLog('master', null, 25)->toArray(),
+                'commits' => $repo->getLog('master', null, 10)->toArray(),
         ));
     }
 
-    public function checkout(Request $request, $repoid, $ref)
+    public function checkout(Request $request, $ctxid, $ref)
     {
-        $context = $this->getContext($repoid);
+        $context = $this->getContext($ctxid);
         $repo    = $context->getRepo();
-        $repo->fetch($context->getRemote()->getName());
         if ($repo->isDirty()) {
-            $repo->hardReset();
+            $repo->reset('HEAD', 'hard');
+            $repo->clean();
         }
         $repo->checkout($ref);
         $repo->updateSubmodule(true, true, true);
         return new RedirectResponse($this->app->path('repo_details',
-                array('repoid' => $repoid)));
+                array('ctxid' => $ctxid)));
     }
 
-    public function init(Request $request, $repoid)
+    public function init(Request $request, $ctxid)
     {
-        $context = $this->getContext($repoid);
+        $context = $this->getContext($ctxid);
         $context->isInitialized(true);
         return new RedirectResponse($this->app->path('repo_details',
-                array('repoid' => $repoid)));
+                array('ctxid' => $ctxid)));
     }
 
     /**

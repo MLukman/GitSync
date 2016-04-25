@@ -18,11 +18,11 @@ class Controller
 
     public function __construct(\Silex\Application $app)
     {
-        $this->app        = $app;
+        $this->app = $app;
         //$this->page_title = \GitSync\Config::$default_page_title;
 
         $this->context              = new \stdClass();
-        $this->context->baseUIPath  = $app->path('root');
+        $this->context->baseUIPath  = $app->path(ROOT_PATH);
         $this->context->_CONTROLLER = $this;
         $this->context->extra_js    = array();
         $this->context->extra_css   = array();
