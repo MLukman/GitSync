@@ -19,10 +19,6 @@ class RootControllerProvider implements \Silex\ControllerProviderInterface
         $controllers->get('/ctx/{ctxid}/', 'context.controller:details')->bind('context_details');
         $controllers->get('/', 'context.controller:index')->bind('context_index');
 
-        $app['acl']
-            ->allowAll('context_')
-        ;
-
         return $controllers;
     }
 }

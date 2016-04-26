@@ -4,13 +4,16 @@ namespace GitSync;
 
 define('ROOT_PATH', 'context_index');
 
-use Symfony\Component\HttpFoundation\Request;
-
 class Application extends \Silex\Application
 {
 
     use \Silex\Application\UrlGeneratorTrait;
-    protected $config = null;
+    protected $config    = null;
+    protected $firewalls = array(
+        'secured' => array(
+            'pattern' => '^/',
+            'http' => true,
+    ));
 
     public function __construct(\GitSync\Config $config)
     {
@@ -21,10 +24,9 @@ class Application extends \Silex\Application
         $app->register(new \Silex\Provider\UrlGeneratorServiceProvider());
         $app->register(new \Silex\Provider\ServiceControllerServiceProvider());
 
-        /* Access Control */
-        $this['acl'] = $app->share(function () use ($app) {
-            return new \GitSync\Service\AclManager($app);
-        });
+        /* Security */
+        $app->register(new \Silex\Provider\SecurityServiceProvider(),
+            array('security.firewalls' => array()));
 
         /* Twig Template Engine */
         $app->register(new \Silex\Provider\TwigServiceProvider(),
@@ -33,17 +35,44 @@ class Application extends \Silex\Application
         ));
 
         /* Auth controllers */
-        $app->mount('/auth', new \GitSync\Provider\AuthControllerProvider());
+        //$app->mount('/auth', new \GitSync\Provider\AuthControllerProvider());
 
         /* Root controller */
         $app->mount('/', new \GitSync\Provider\RootControllerProvider());
+    }
 
-        /* Security */
-        $app->before(function(Request $request, \Silex\Application $app) {
-            if (!($routeName = $request->get('_route')) ||
-                $app['acl']->checkPermission($routeName, 'test')) {
-                return; // allow access
-            }
+    public function addSecurityProvider($id,
+                                        Security\SecurityProviderInterface $provider)
+    {
+        $app = $this;
+
+        $app['security.authentication_listener.factory.'.$id] = $app->protect(function ($name, $options) use ($app, $id, $provider) {
+
+            // define the authentication provider object
+            $app['security.authentication_provider.'.$name.'.'.$id] = $app->share(function () use ($app, $provider) {
+                return $provider->getAuthenticationProvider($app);
+            });
+
+            // define the authentication listener object
+            $app['security.authentication_listener.'.$name.'.'.$id] = $app->share(function () use ($app, $provider) {
+                return $provider->getAuthenticationListener($app);
+            });
+
+            return array(
+                // the authentication provider id
+                'security.authentication_provider.'.$name.'.'.$id,
+                // the authentication listener id
+                'security.authentication_listener.'.$name.'.'.$id,
+                // the entry point id
+                null,
+                // the position of the listener in the stack
+                'pre_auth'
+            );
         });
+
+        //$this->firewalls['secured']['secure'] = true;
+        $this->firewalls['secured'][$id] = true;
+
+        $app['security.firewalls'] = $this->firewalls;
     }
 }

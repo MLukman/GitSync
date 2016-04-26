@@ -35,22 +35,6 @@ class Context extends \GitSync\Base\Controller
 
         $repo = $context->getRepo();
 
-        /*
-          try {
-          $remote = $repo->getRemote('origin');
-          if ($remote->getFetchURL() != $context->getRemoteUrl()) {
-          $repo->addRemote('gitsync', $context->getRemoteUrl());
-          $remote = $repo->getRemote('gitsync');
-          }
-          } catch (\Exception $e) {
-          if (strpos($e->getMessage(), "remote doesn't exist")) {
-          $repo->addRemote('origin', $context->getRemoteUrl());
-          $remote = $repo->getRemote('origin');
-          } else {
-          throw $e;
-          }
-          } */
-
         return $this->renderDisplay('repo_details',
                 array(
                 'ctxid' => $ctxid,
