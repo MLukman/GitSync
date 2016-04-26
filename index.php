@@ -8,8 +8,7 @@ if (!file_exists(AUTOLOAD)) {
 
 $config = new \GitSync\Config();
 $config->addContext('GitSync',
-    new \GitSync\Context(__DIR__, 'https://github.com/MLukman/GitSync',
-    'with-vendor'));
+    new \GitSync\Context(__DIR__, 'https://github.com/MLukman/GitSync'));
 
 $app = new \GitSync\Application($config);
 
