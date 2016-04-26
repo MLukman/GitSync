@@ -3,7 +3,9 @@
 namespace GitSync\Command;
 
 /**
- * Description of ResetCommand
+ * Reset command generator
+ *
+ * @author Muhammad Lukman Nasarruddin <anatilmizun@gmail.com>
  */
 class ResetCommand extends \GitElephant\Command\BaseCommand
 {
@@ -20,11 +22,11 @@ class ResetCommand extends \GitElephant\Command\BaseCommand
     {
         $this->clearAll();
         $this->addCommandName(self::GIT_RESET);
-        if ($hard) {
-            $method_option = (isset(self::$methods[$method]) ? self::$methods[$method]
-                        : self::$methods['mixed']);
-            $this->addCommandArgument('--'.$method_option);
-        }
+
+        // only accept method listed in static $methods array, default to 'mixed'
+        $method_option = (isset(self::$methods[$method]) ? self::$methods[$method]
+                    : self::$methods['mixed']);
+        $this->addCommandArgument('--'.$method_option);
         $this->addCommandArgument($ref ? : 'HEAD');
 
         return $this->getCommand();
