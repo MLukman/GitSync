@@ -18,6 +18,7 @@ Execute the following commands:
     mkdir /path/to/GitSync
     cd /path/to/GitSync
     git clone https://github.com/MLukman/GitSync .
+	composer install
 
 Then, customize `index.php` to match your directories. Refer the section on 'Customization' below.
 
@@ -27,7 +28,7 @@ Execute the following commands:
 
     mkdir /path/to/GitSync
     cd /path/to/GitSync
-    composer install
+    composer require mlukman/gitsync
 
 Then, either copy `index.php` from folder `vendor/mlukman/gitsync/` or create your own file using the following section on 'Customization'.
 
