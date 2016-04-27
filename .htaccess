@@ -3,5 +3,5 @@
     RewriteEngine On
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [QSA,L]
-    RewriteRule !^(ui/|index.php) - [F,L,NC]
+    RewriteRule !^(ui/|vendor/|index.php) - [F,L,NC]
 </IfModule>

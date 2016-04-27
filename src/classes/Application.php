@@ -3,6 +3,8 @@
 namespace GitSync;
 
 define('ROOT_PATH', 'context_index');
+define('LIB_DIR', realpath(__DIR__.'/../../'));
+define('ROOT_DIR', dirname($_SERVER["SCRIPT_FILENAME"]));
 
 use Symfony\Component\HttpFoundation\Request;
 
@@ -15,6 +17,7 @@ class Application extends \Silex\Application
     public function __construct(\GitSync\Config $config)
     {
         parent::__construct();
+
         $app           = $this;
         $app['config'] = $config;
 
@@ -45,5 +48,10 @@ class Application extends \Silex\Application
                 return; // allow access
             }
         });
+
+        /* if .htaccess file is missing */
+        if (!file_exists(ROOT_DIR.'/.htaccess') && file_exists(LIB_DIR.'/.htaccess')) {
+            copy(LIB_DIR.'/.htaccess', ROOT_DIR.'/.htaccess');
+        }
     }
 }

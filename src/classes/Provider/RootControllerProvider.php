@@ -17,6 +17,7 @@ class RootControllerProvider implements \Silex\ControllerProviderInterface
         $controllers->get('/ctx/{ctxid}/checkout/{ref}',
             'context.controller:checkout')->bind('context_checkout');
         $controllers->get('/ctx/{ctxid}/', 'context.controller:details')->bind('context_details');
+        $controllers->get('/refresh/', 'context.controller:refresh')->bind('context_refresh');
         $controllers->get('/', 'context.controller:index')->bind('context_index');
 
         $app['acl']

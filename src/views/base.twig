@@ -22,10 +22,13 @@
   {% for js in extra_js %}<script src="{{js}}"></script>{% endfor %}
   {% for css in extra_css %}<link rel="stylesheet" type="text/css" href="{{css}}" />{% endfor %}
 </head>
-<body style="{% if not nopadding is defined or not nopadding %}padding:2em{% endif %}">
+<body style="padding: 2em">
+	<a href="{{basePath}}"><img src="{{baseUIPath}}ui/gitsync-small.png" /></a>
 
-<a href="{{baseUIPath}}"><img src="{{baseUIPath}}ui/gitsync-small.png" /></a>
-{{content|raw}}    
+	{{content|raw}}
+
+	<div style="padding-bottom:3em">Powered by GitSync
+	(<a href="https://github.com/MLukman/GitSync">https://github.com/MLukman/GitSync</a>)</div>
 
 </body>
 </html>

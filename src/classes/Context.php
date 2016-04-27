@@ -15,6 +15,18 @@ class Context
     protected $repo;
 
     /**
+     *
+     * @var string
+     */
+    protected $id;
+
+    /**
+     *
+     * @var string
+     */
+    protected $name;
+
+    /**
      * Filesystem path pointing to the directory
      * @var string
      */
@@ -46,12 +58,35 @@ class Context
      * @param array $allowedUids The list of user ids who can manage this context
      */
     public function __construct($path, $remote_url, $branch = 'master',
-                                array $allowedUids = array())
+                                $name = null, $id = null)
     {
-        $this->path        = realpath($path);
-        $this->remote_url  = $remote_url;
-        $this->branch      = $branch;
-        $this->allowedUids = array_values($allowedUids);
+        $this->path       = \realpath($path);
+        $this->remote_url = $remote_url;
+        $this->branch     = $branch;
+        if ($id) {
+            $this->id = \preg_replace('/[^a-zA-Z0-9\s]/', '-', $id);
+        } else {
+            $this->id = \basename($path);
+        }
+        $this->name = ($name ? : $this->id);
+    }
+
+    /**
+     * Get id
+     * @return string
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Get name
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
     }
 
     /**
@@ -120,7 +155,16 @@ class Context
     }
 
     /**
-     * Check if a specific user id is allowed to manage this context
+     * Allow user id to access this context
+     * @param string $uid User id to allow access
+     */
+    public function addAllowedUid($uid)
+    {
+        $this->allowedUids[] = $uid;
+    }
+
+    /**
+     * Check if a specific user id is allowed to access this context
      * @param string $uid User id
      * @return bool
      */
@@ -151,7 +195,7 @@ class Context
             try {
                 $repo->addRemote('origin', $this->remote_url);
                 $repo->fetch('origin');
-                $repo->hardReset('origin/'.$this->branch);
+                $repo->reset('origin/'.$this->branch, 'hard');
                 $repo->checkout($this->branch);
                 $repo->updateSubmodule(true, true, true);
             } catch (\Exception $e2) {
@@ -180,6 +224,11 @@ class Context
     {
         $repo = $this->getRepo();
         return $repo->getCommit('HEAD') == $repo->getBranch($this->branch)->getLastCommit();
+    }
+
+    public function fetch()
+    {
+        $this->getRepo()->fetch($this->getRemote()->getName());
     }
 
     /**
