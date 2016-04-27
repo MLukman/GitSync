@@ -1,9 +1,10 @@
 <h1 class="ui header">
 	<i class="sitemap icon"></i>
-	<div class="content">{{ctxid}} [{{context.getPath()}}]</div>
+	<div class="content">{{context.getName()}} [{{context.getPath()}}]</div>
 </h1>
 
-<a class="ui basic blue label"><i class="fork icon"></i>{{context.getBranch()}}</a>
+<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
+<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranch()}}</div>
 {% if context.isDirty() %}
 <a class="ui red label"><i class="warning sign icon"></i>Unsync</a>
 {% endif %}
@@ -36,7 +37,7 @@
 		{% if revision.getSHA() %}
 		<tr{% if revision.getCommit().getSHA() == head.getSHA() %} class="active"{% endif %}>
 			<td class="collapsing">{{revision.getDate().format('Y-m-d H:i:s')}}</td>
-			<td class="collapsing">
+			<td class="center aligned collapsing">
 			{% for tag in revision.getTags() %}<span class="ui tag label">{{tag}}</span>
 			{% else %}{{revision.getSHA(true)}}
 			{% endfor %}
@@ -46,7 +47,7 @@
 				{% if revision.getCommit() == head and not context.isDirty() %}
 				<i class="ui check square icon"></i>OK
 				{% else %}
-				<a href="{{app.path('context_checkout', {'ctxid': ctxid, 'ref': revision.getSHA()})}}" class="ui primary button">Restore</a>
+				<a href="{{app.path('context_checkout', {'ctxid': ctxid, 'ref': revision.getSHA()})}}" class="ui primary button">Sync</a>
 				{% endif %}</td>
 		</tr>
 		{% else %}

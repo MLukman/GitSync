@@ -20,9 +20,13 @@ class Controller
     {
         $this->app = $app;
         //$this->page_title = \GitSync\Config::$default_page_title;
+        $subpath   = str_replace("\\", "/",
+            substr(LIB_DIR, strlen(ROOT_DIR) + 1));
+        $basePath  = $app->path(ROOT_PATH);
 
         $this->context              = new \stdClass();
-        $this->context->baseUIPath  = $app->path(ROOT_PATH);
+        $this->context->basePath    = $basePath;
+        $this->context->baseUIPath  = $basePath.($subpath ? $subpath.'/' : '');
         $this->context->_CONTROLLER = $this;
         $this->context->extra_js    = array();
         $this->context->extra_css   = array();

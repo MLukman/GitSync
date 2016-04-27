@@ -5,11 +5,11 @@ namespace GitSync;
 class Config
 {
     protected $authServices = array();
-    protected $contexts  = array();
+    protected $contexts     = array();
 
-    public function addContext($name, \GitSync\Context $config)
+    public function addContext(\GitSync\Context $config)
     {
-        $this->contexts[$name] = $config;
+        $this->contexts[$config->getId()] = $config;
     }
 
     public function getContexts()

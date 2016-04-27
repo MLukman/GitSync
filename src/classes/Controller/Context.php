@@ -45,6 +45,14 @@ class Context extends \GitSync\Base\Controller
         ));
     }
 
+    public function refresh(Request $request)
+    {
+        foreach ($this->app['config']->getContexts() as $context) {
+            $context->fetch();
+        }
+        return new RedirectResponse($this->app->path('context_index'));
+    }
+
     public function checkout(Request $request, $ctxid, $ref)
     {
         $context = $this->getContext($ctxid);
@@ -55,7 +63,7 @@ class Context extends \GitSync\Base\Controller
         }
         $repo->checkout($ref);
         $repo->updateSubmodule(true, true, true);
-        return new RedirectResponse($this->app->path('repo_details',
+        return new RedirectResponse($this->app->path('context_details',
                 array('ctxid' => $ctxid)));
     }
 
@@ -63,7 +71,7 @@ class Context extends \GitSync\Base\Controller
     {
         $context = $this->getContext($ctxid);
         $context->isInitialized(true);
-        return new RedirectResponse($this->app->path('repo_details',
+        return new RedirectResponse($this->app->path('context_details',
                 array('ctxid' => $ctxid)));
     }
 
