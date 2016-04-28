@@ -47,7 +47,7 @@
 				{% if revision.getCommit() == head and not context.isDirty() %}
 				<i class="ui check square icon"></i>OK
 				{% else %}
-				<a href="{{app.path('context_checkout', {'ctxid': ctxid, 'ref': revision.getSHA()})}}" class="ui primary button">Sync</a>
+				<a href="{{app.path('context_checkout', {'ctxid': ctxid, 'ref': revision.getRef()})}}" class="ui primary button">Sync</a>
 				{% endif %}</td>
 		</tr>
 		{% else %}

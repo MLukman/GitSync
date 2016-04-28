@@ -55,14 +55,7 @@ class Context extends \GitSync\Base\Controller
 
     public function checkout(Request $request, $ctxid, $ref)
     {
-        $context = $this->getContext($ctxid);
-        $repo    = $context->getRepo();
-        if ($repo->isDirty()) {
-            $repo->reset('HEAD', 'hard');
-            $repo->clean();
-        }
-        $repo->checkout($ref);
-        $repo->updateSubmodule(true, true, true);
+        $context = $this->getContext($ctxid)->checkout($ref);
         return new RedirectResponse($this->app->path('context_details',
                 array('ctxid' => $ctxid)));
     }

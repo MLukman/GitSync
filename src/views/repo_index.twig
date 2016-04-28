@@ -3,10 +3,11 @@
 	<div class="content">All contexts</div>
 </h1>
 
-{% for id,context in contexts %}
 <div>
 	<a href="{{app.path('context_refresh')}}" class="ui primary button">Refresh from Remote Repositories</a>
 </div>
+
+{% for id,context in contexts %}
 <div class="ui item stacked segment">
 	<h2 class="header">
 		<a href="{{app.path('context_details', {'ctxid': id})}}">{{context.getName()}}</a>
