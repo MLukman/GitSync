@@ -2,6 +2,9 @@
 
 namespace GitSync;
 
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler as StreamLogger;
+
 /**
  * A Context represents a directory in the server's filesystem that will be
  * managed by a specific list of users via GitSync.
@@ -51,6 +54,12 @@ class Context
     protected $allowedUids;
 
     /**
+     * Logger
+     * @var \Monolog\Logger
+     */
+    protected $logger;
+
+    /**
      * Constructor
      * @param string $path The filesystem path pointing to the directory
      * @param string $remote_url The git remote URL
@@ -68,7 +77,8 @@ class Context
         } else {
             $this->id = \basename($path);
         }
-        $this->name = ($name ? : $this->id);
+        $this->name    = ($name ? : $this->id);
+        $this->logfile = $this->id.'.log';
     }
 
     /**
@@ -226,9 +236,48 @@ class Context
         return $repo->getCommit('HEAD') == $repo->getBranch($this->branch)->getLastCommit();
     }
 
+    /**
+     * Log message
+     * @param int $level One of the constants in \Monolog\Logger class (e.g Logger::INFO)
+     * @param string $message The message
+     * @param array $context Parameters
+     * @param string $uid User id
+     */
+    public function log($level, $message, array $context = array(), $uid = null)
+    {
+        if (!$this->logger) {
+            $this->logger = new Logger('logger',
+                array(
+                new StreamLogger(LIB_DIR.'/logs/'.$this->logfile)));
+        }
+        if ($uid) {
+            $context['userid'] = $uid;
+        }
+        $this->logger->log($level, $message, $context);
+    }
+
+    /**
+     * Fetch latest commits from remote
+     */
     public function fetch()
     {
         $this->getRepo()->fetch($this->getRemote()->getName());
+    }
+
+    /**
+     * Checkout specific commit or tag or reference
+     * @param string $ref
+     */
+    public function checkout($ref)
+    {
+        $repo = $this->getRepo();
+        if ($repo->isDirty()) {
+            $repo->reset('HEAD', 'hard');
+            $repo->clean();
+        }
+        $repo->checkout($ref);
+        $repo->updateSubmodule(true, true, true);
+        $this->log(Logger::INFO, "Successfully sync directory with a revision", array('ref' => $ref));
     }
 
     /**

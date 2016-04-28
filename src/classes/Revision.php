@@ -50,4 +50,10 @@ class Revision
     {
         return array_keys($this->tags);
     }
+
+    public function getRef()
+    {
+        $tags = $this->getTags();
+        return (count($tags) ? $tags[0] : $this->getSHA());
+    }
 }
