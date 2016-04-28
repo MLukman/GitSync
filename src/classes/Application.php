@@ -42,12 +42,18 @@ class Application extends \Silex\Application
 
         /* Root controller */
         $app->mount('/', new \GitSync\Provider\RootControllerProvider());
+
+        /* if .htaccess file is missing */
+        if (!file_exists(ROOT_DIR.'/.htaccess') && file_exists(LIB_DIR.'/.htaccess')) {
+            copy(LIB_DIR.'/.htaccess', ROOT_DIR.'/.htaccess');
+        }
     }
 
-    public function addSecurityProvider($id,
-                                        Security\SecurityProviderInterface $provider)
+    public function addSecurityProvider(Security\SecurityProviderInterface $provider,
+                                        $id = null)
     {
         $app = $this;
+        $id  = $id ? : 'secure'.rand(100, 999);
 
         $app['security.authentication_listener.factory.'.$id] = $app->protect(function ($name, $options) use ($app, $id, $provider) {
 
@@ -62,14 +68,10 @@ class Application extends \Silex\Application
             });
 
             return array(
-                // the authentication provider id
-                'security.authentication_provider.'.$name.'.'.$id,
-                // the authentication listener id
-                'security.authentication_listener.'.$name.'.'.$id,
-                // the entry point id
-                null,
-                // the position of the listener in the stack
-                'pre_auth'
+                'security.authentication_provider.'.$name.'.'.$id, // the authentication provider id
+                'security.authentication_listener.'.$name.'.'.$id, // the authentication listener id
+                null, // the entry point id
+                'pre_auth' // the position of the listener in the stack
             );
         });
 
@@ -77,10 +79,5 @@ class Application extends \Silex\Application
         $this->firewalls['secured'][$id] = true;
 
         $app['security.firewalls'] = $this->firewalls;
-
-        /* if .htaccess file is missing */
-        if (!file_exists(ROOT_DIR.'/.htaccess') && file_exists(LIB_DIR.'/.htaccess')) {
-            copy(LIB_DIR.'/.htaccess', ROOT_DIR.'/.htaccess');
-        }
     }
 }

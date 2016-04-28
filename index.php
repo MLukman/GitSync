@@ -13,11 +13,9 @@ $config->addContext(new \GitSync\Context(__DIR__,
 
 $app = new \GitSync\Application($config);
 
-$security = new \GitSync\Security\LdapSecurityProvider("10.41.86.223", 389,
-    "uid={username},ou=People,o=Telekom");
-$security->userProvider->createUser(new \Symfony\Component\Security\Core\User\User('S52514',
-    null, array('ROLE_ADMIN')));
-//$app->addSecurityProvider('ldap', $security);
+$security = new GitSync\Security\SimpleSecurityProvider();
+$security->addUser('admin', 'admin');
+$app->addSecurityProvider($security);
 
 $app['debug'] = true;
 $app->run();

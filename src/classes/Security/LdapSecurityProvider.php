@@ -2,12 +2,27 @@
 
 namespace GitSync\Security;
 
+use Symfony\Component\Ldap\LdapClient;
+use Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProviderInterface;
 use Symfony\Component\Security\Core\Authentication\Provider\LdapBindAuthenticationProvider;
+use Symfony\Component\Security\Core\User\InMemoryUserProvider;
+use Symfony\Component\Security\Core\User\User;
+use Symfony\Component\Security\Http\EntryPoint\BasicAuthenticationEntryPoint;
+use Symfony\Component\Security\Http\Firewall\BasicAuthenticationListener;
+use Symfony\Component\Security\Http\Firewall\ListenerInterface;
 
 class LdapSecurityProvider implements SecurityProviderInterface
 {
-    protected $app;
+    /**
+     * Authentication Provider
+     * @var AuthenticationProviderInterface
+     */
     protected $authenticationProvider;
+
+    /**
+     * Authentication Listener
+     * @var ListenerInterface
+     */
     protected $authenticationListener;
 
     /**
@@ -36,17 +51,15 @@ class LdapSecurityProvider implements SecurityProviderInterface
 
     public function __construct($host, $port, $dnString)
     {
-        $this->userProvider = new \Symfony\Component\Security\Core\User\InMemoryUserProvider();
-        $this->userChecker  = new \Symfony\Component\Security\Core\User\UserChecker();
-        $this->ldapClient   = new \Symfony\Component\Ldap\LdapClient($host,
-            $port);
+        $this->userProvider = new InMemoryUserProvider();
+        $this->ldapClient   = new LdapClient($host, $port);
         $this->providerKey  = rand(1000, 9999);
         $this->dnString     = $dnString;
     }
 
     /**
      * 
-     * @return \Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProviderInterface
+     * @return AuthenticationProviderInterface
      */
     public function getAuthenticationProvider(\Silex\Application $app)
     {
@@ -60,17 +73,21 @@ class LdapSecurityProvider implements SecurityProviderInterface
 
     /**
      *
-     * @return \Symfony\Component\Security\Http\Firewall\ListenerInterface
+     * @return ListenerInterface
      */
     public function getAuthenticationListener(\Silex\Application $app)
     {
         //$app['security.token_storage'], $app['security.authentication_manager']
         if (!$this->authenticationListener) {
-            $this->authenticationListener = new \Symfony\Component\Security\Http\Firewall\DigestAuthenticationListener($app['security.token_storage'],
-                $this->userProvider, $this->providerKey,
-                new \Symfony\Component\Security\Http\EntryPoint\DigestAuthenticationEntryPoint('GitSync',
-                md5(rand(0, 999))));
+            $this->authenticationListener = new BasicAuthenticationListener($app['security.token_storage'],
+                $app['security.authentication_manager'], $this->providerKey,
+                new BasicAuthenticationEntryPoint('GitSync'));
         }
         return $this->authenticationListener;
+    }
+
+    public function addUser($userid, array $role = array('ROLE_ADMIN'))
+    {
+        $this->userProvider->createUser(new User($userid, null, $role));
     }
 }
