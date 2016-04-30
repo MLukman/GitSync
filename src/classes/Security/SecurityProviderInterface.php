@@ -5,7 +5,8 @@ namespace GitSync\Security;
 interface SecurityProviderInterface
 {
 
-    public function getAuthenticationProvider(\Silex\Application $app);
+    public function getAuthenticationProvider(\Silex\Application $app,
+                                              $providerKey);
 
-    public function getAuthenticationListener(\Silex\Application $app);
+    public function getUserProvider();
 }

@@ -3,32 +3,16 @@
 namespace GitSync\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class Auth extends \GitSync\Base\Controller
 {
 
-    public function login(Request $request, $error = null)
+    public function login(Request $request)
     {
         return $this->renderDisplay('login',
                 array(
-                'post' => $request->request,
-                'error' => $error,
+                'error' => $this->app['security.last_error']($request),
+                'last_username' => $this->app['session']->get('_security.last_username'),
         ));
-    }
-
-    public function doLogin(Request $request)
-    {
-        $p = $request->request;
-        if ($this->app['auth']->login($p->get('username'), $p->get('password'))) {
-            return new RedirectResponse($p->get('origin_uri'));
-        }
-        return $this->login($request, 'Invalid username/password');
-    }
-
-    public function logout(Request $request)
-    {
-        $this->app['auth']->logout();
-        return new RedirectResponse($request->server->get('HTTP_REFERER') ? : $request->getBasePath());
     }
 }

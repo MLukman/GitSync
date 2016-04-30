@@ -3,9 +3,11 @@
 	<div class="content">All contexts</div>
 </h1>
 
+{% if not app.isSecurityEnabled() or app.isGranted('IS_AUTHENTICATED_FULLY') %}
 <div>
 	<a href="{{app.path('context_refresh')}}" class="ui primary button">Refresh from Remote Repositories</a>
 </div>
+{% endif %}
 
 {% for id,context in contexts %}
 <div class="ui item stacked segment">

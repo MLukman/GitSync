@@ -7,9 +7,6 @@ use Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProvid
 use Symfony\Component\Security\Core\Authentication\Provider\LdapBindAuthenticationProvider;
 use Symfony\Component\Security\Core\User\InMemoryUserProvider;
 use Symfony\Component\Security\Core\User\User;
-use Symfony\Component\Security\Http\EntryPoint\BasicAuthenticationEntryPoint;
-use Symfony\Component\Security\Http\Firewall\BasicAuthenticationListener;
-use Symfony\Component\Security\Http\Firewall\ListenerInterface;
 
 class LdapSecurityProvider implements SecurityProviderInterface
 {
@@ -20,40 +17,27 @@ class LdapSecurityProvider implements SecurityProviderInterface
     protected $authenticationProvider;
 
     /**
-     * Authentication Listener
-     * @var ListenerInterface
-     */
-    protected $authenticationListener;
-
-    /**
      *
      * @var \Symfony\Component\Security\Core\User\InMemoryUserProvider
      */
-    public $userProvider;
-
-    /**
-     *
-     * @var string
-     */
-    public $providerKey;
+    protected $userProvider;
 
     /**
      *
      * @var \Symfony\Component\Ldap\LdapClientInterface
      */
-    public $ldapClient;
+    protected $ldapClient;
 
     /**
      *
      * @var string
      */
-    public $dnString;
+    protected $dnString;
 
     public function __construct($host, $port, $dnString)
     {
         $this->userProvider = new InMemoryUserProvider();
         $this->ldapClient   = new LdapClient($host, $port);
-        $this->providerKey  = rand(1000, 9999);
         $this->dnString     = $dnString;
     }
 
@@ -61,33 +45,24 @@ class LdapSecurityProvider implements SecurityProviderInterface
      * 
      * @return AuthenticationProviderInterface
      */
-    public function getAuthenticationProvider(\Silex\Application $app)
+    public function getAuthenticationProvider(\Silex\Application $app,
+                                              $providerKey)
     {
         if (!$this->authenticationProvider) {
             $this->authenticationProvider = new LdapBindAuthenticationProvider($this->userProvider,
-                $app['security.user_checker'], $this->providerKey,
-                $this->ldapClient, $this->dnString);
+                $app['security.user_checker'], $providerKey, $this->ldapClient,
+                $this->dnString);
         }
         return $this->authenticationProvider;
-    }
-
-    /**
-     *
-     * @return ListenerInterface
-     */
-    public function getAuthenticationListener(\Silex\Application $app)
-    {
-        //$app['security.token_storage'], $app['security.authentication_manager']
-        if (!$this->authenticationListener) {
-            $this->authenticationListener = new BasicAuthenticationListener($app['security.token_storage'],
-                $app['security.authentication_manager'], $this->providerKey,
-                new BasicAuthenticationEntryPoint('GitSync'));
-        }
-        return $this->authenticationListener;
     }
 
     public function addUser($userid, array $role = array('ROLE_ADMIN'))
     {
         $this->userProvider->createUser(new User($userid, null, $role));
+    }
+
+    public function getUserProvider()
+    {
+        return $this->userProvider;
     }
 }

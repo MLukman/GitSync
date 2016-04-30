@@ -1,29 +1,19 @@
-<style>
-body {
-	background-color: #d0d0d0;
-}
-</style>
 <div class="ui center aligned">
-	<img class="ui centered image" src="{{baseUIPath}}ui/logo.png" />
-</div>
-<div style="height: 20pt"></div>
-<div class="ui center aligned">
-	<div style="margin:0 auto; width:400px">
-		<form method="POST" action="{{app.url_generator.generate('doLogin')}}">
+	<div style="margin: 2em 0; width: 40em]">
+		<form action="{{app.path('admin_login_check')}}" method="post">
 			<div class="ui form piled segment">
 				<h2 class="ui header">Please Login To Continue</h2>
 				{% if error %}<div class="ui negative message">{{error}}</div>{% endif %}
 				<div class="required field">
 					<label>User Name</label>
-					<input type="text" name="username" placeholder="User Name" />
+				    <input type="text" name="_username" placeholder="User Name" value="{{last_username}}" />
 				</div>
 				<div class="required field">
 					<label>Password</label>
-					<input type="password" name="password" placeholder="Password" />
+					<input type="password" name="_password" placeholder="Password" value="" />
 				</div>
 				<div class="required field center aligned">
 					<input class="ui primary button" type="submit" name="login" value="Login" />
-					<input type="hidden" name="origin_uri" value="{{post.origin_uri|default(app.session.get('origin_uri'))}}" />
 				</div>
 			</div>
 		</form>

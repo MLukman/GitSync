@@ -23,6 +23,13 @@
   {% for css in extra_css %}<link rel="stylesheet" type="text/css" href="{{css}}" />{% endfor %}
 </head>
 <body style="padding: 2em">
+
+	{% if app.isGranted('IS_AUTHENTICATED_FULLY') %}
+		<a href="{{path('logout')}}" class="ui tiny button right floated">Logout</a>
+	{% elseif app.isSecurityEnabled() %}
+		<a href="{{path('login')}}" class="ui tiny button right floated">Login</a>
+	{% endif %}
+
 	<a href="{{basePath}}"><img src="{{baseUIPath}}ui/gitsync-small.png" /></a>
 
 	{{content|raw}}

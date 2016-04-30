@@ -51,7 +51,7 @@ class Context
      * The list of user ids who can manage this context
      * @var string[]
      */
-    protected $allowedUids;
+    protected $allowedUids = array();
 
     /**
      * Logger
@@ -64,7 +64,8 @@ class Context
      * @param string $path The filesystem path pointing to the directory
      * @param string $remote_url The git remote URL
      * @param string $branch The branch name to track, default to 'master'
-     * @param array $allowedUids The list of user ids who can manage this context
+     * @param string $name The user-friendly name of this context (default to the id)
+     * @param string $id The id of this context (default to the last part of the path)
      */
     public function __construct($path, $remote_url, $branch = 'master',
                                 $name = null, $id = null)
@@ -171,6 +172,7 @@ class Context
     public function addAllowedUid($uid)
     {
         $this->allowedUids[] = $uid;
+        return $this;
     }
 
     /**
@@ -180,7 +182,7 @@ class Context
      */
     public function isUidAllowed($uid)
     {
-        return in_array($uid, $this->allowedUids);
+        return $uid ? in_array($uid, $this->allowedUids) : false;
     }
 
     /**
@@ -277,7 +279,8 @@ class Context
         }
         $repo->checkout($ref);
         $repo->updateSubmodule(true, true, true);
-        $this->log(Logger::INFO, "Successfully sync directory with a revision", array('ref' => $ref));
+        $this->log(Logger::INFO, "Successfully sync directory with a revision",
+            array('ref' => $ref));
     }
 
     /**
