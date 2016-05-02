@@ -11,6 +11,8 @@ use Monolog\Handler\StreamHandler as StreamLogger;
  */
 class Context
 {
+
+    use \GitSync\Security\SecuredAccessTrait;
     /**
      * Git repo manager object
      * @var \GitSync\Repository
@@ -46,12 +48,6 @@ class Context
      * @var string
      */
     protected $branch;
-
-    /**
-     * The list of user ids who can manage this context
-     * @var string[]
-     */
-    protected $allowedUids = array();
 
     /**
      * Logger
@@ -163,26 +159,6 @@ class Context
             }
             throw $e;
         }
-    }
-
-    /**
-     * Allow user id to access this context
-     * @param string $uid User id to allow access
-     */
-    public function addAllowedUid($uid)
-    {
-        $this->allowedUids[] = $uid;
-        return $this;
-    }
-
-    /**
-     * Check if a specific user id is allowed to access this context
-     * @param string $uid User id
-     * @return bool
-     */
-    public function isUidAllowed($uid)
-    {
-        return $uid ? in_array($uid, $this->allowedUids) : false;
     }
 
     /**

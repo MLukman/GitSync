@@ -58,14 +58,6 @@ class Application extends \Silex\Application
             copy(LIB_DIR.'/.htaccess', ROOT_DIR.'/.htaccess');
         }
 
-        $app['security.firewalls'] = array(
-            'login' => array(
-                'pattern' => '^/auth/login$',
-            ),
-            'secured' => array(
-                'pattern' => '^/',
-            )
-        );
     }
 
     public function addSecurityProvider(Security\SecurityProviderInterface $provider,
