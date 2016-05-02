@@ -14,14 +14,7 @@ class AuthControllerProvider implements \Silex\ControllerProviderInterface
         });
 
         $controllers->get('/login', 'auth.controller:login')->bind('login');
-        $controllers->post('/login', 'auth.controller:doLogin')->bind('doLogin');
-        $controllers->get('/logout', 'auth.controller:logout')->bind('logout');
 
-        $app['acl']
-            ->allowAll('login')
-            ->allowAll('doLogin')
-            ->allowAll('logout')
-        ;
         return $controllers;
     }
 }

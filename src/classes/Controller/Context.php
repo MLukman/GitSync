@@ -16,15 +16,29 @@ class Context extends \GitSync\Base\Controller
 
     public function index(Request $request)
     {
+        if ($this->app->isSecurityEnabled() && !$this->app->isGranted('ROLE_ADMIN')) {
+            $uid = $this->app->uid();
+
+            $contexts = array();
+            foreach ($this->app['config']->getContexts() as $context) {
+                if ($context->isUidAllowed($uid)) {
+                    $contexts[] = $context;
+                }
+            }
+        } else {
+            $contexts = $this->app['config']->getContexts();
+        }
+
         return $this->renderDisplay('repo_index',
                 array(
-                'contexts' => $this->app['config']->getContexts(),
+                'contexts' => $contexts,
         ));
     }
 
     public function details(Request $request, $ctxid)
     {
         $context = $this->getContext($ctxid);
+
         if (!$context->isInitialized()) {
             return $this->renderDisplay('repo_init',
                     array(
@@ -75,6 +89,12 @@ class Context extends \GitSync\Base\Controller
      */
     protected function getContext($name)
     {
-        return $this->app['config']->getContext($name);
+        $context = $this->app['config']->getContext($name);
+        if ($this->app->isSecurityEnabled()) {
+            if (!$this->app->isGranted('ROLE_ADMIN') && !$context->isUidAllowed($this->app->uid())) {
+                throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException();
+            }
+        }
+        return $context;
     }
 }

@@ -20,10 +20,6 @@ class RootControllerProvider implements \Silex\ControllerProviderInterface
         $controllers->get('/refresh/', 'context.controller:refresh')->bind('context_refresh');
         $controllers->get('/', 'context.controller:index')->bind('context_index');
 
-        $app['acl']
-            ->allowAll('context_')
-        ;
-
         return $controllers;
     }
 }

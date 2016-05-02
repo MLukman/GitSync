@@ -4,8 +4,7 @@ namespace GitSync;
 
 class Config
 {
-    protected $authServices = array();
-    protected $contexts     = array();
+    protected $contexts = array();
 
     public function addContext(\GitSync\Context $config)
     {
