@@ -20,11 +20,11 @@
 		<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranch()}}</div>
 	</div>
 	{% if context.isDirty() %}
-	<a class="ui red top right attached label"><i class="warning sign icon"></i>Unsync</a>
+	<div class="ui red top right attached label"><i class="warning sign icon"></i>Unsync</div>
 	{% elseif not context.isLatest() %}
-	<a class="ui orange top right attached label"><i class="warning sign icon"></i>Outdated</a>
+	<div class="ui orange top right attached label"><i class="warning sign icon"></i>Outdated</div>
 	{% else %}
-	<a class="ui green top right attached label"><i class="check circle icon"></i>OK</a>
+	<div class="ui green top right attached label"><i class="check circle icon"></i>OK</div>
 	{% endif %}
 </div>
 {% endfor %}

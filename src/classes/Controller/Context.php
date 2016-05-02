@@ -29,7 +29,7 @@ class Context extends \GitSync\Base\Controller
             $contexts = $this->app['config']->getContexts();
         }
 
-        return $this->renderDisplay('repo_index',
+        return $this->renderDisplay($this->app['config']->contextIndexView,
                 array(
                 'contexts' => $contexts,
         ));
@@ -40,7 +40,7 @@ class Context extends \GitSync\Base\Controller
         $context = $this->getContext($ctxid);
 
         if (!$context->isInitialized()) {
-            return $this->renderDisplay('repo_init',
+            return $this->renderDisplay($this->app['config']->contextInitView,
                     array(
                     'ctxid' => $ctxid,
                     'path' => $context->getPath(),
@@ -49,7 +49,7 @@ class Context extends \GitSync\Base\Controller
 
         $repo = $context->getRepo();
 
-        return $this->renderDisplay('repo_details',
+        return $this->renderDisplay($this->app['config']->contextDetailsView,
                 array(
                 'ctxid' => $ctxid,
                 'context' => $context,
@@ -67,9 +67,12 @@ class Context extends \GitSync\Base\Controller
         return new RedirectResponse($this->app->path('context_index'));
     }
 
-    public function checkout(Request $request, $ctxid, $ref)
+    public function checkout(Request $request, $ctxid)
     {
-        $context = $this->getContext($ctxid)->checkout($ref);
+        $context = $this->getContext($ctxid);
+        if (($refstr  = $request->request->get('ref'))) {
+            $context->checkout($refstr);
+        }
         return new RedirectResponse($this->app->path('context_details',
                 array('ctxid' => $ctxid)));
     }

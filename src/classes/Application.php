@@ -14,7 +14,16 @@ class Application extends \Silex\Application
 {
 
     use \Silex\Application\UrlGeneratorTrait;
-    protected $config    = null;
+    /**
+     * The configuration
+     * @var \GitSync\Config
+     */
+    protected $config = null;
+
+    /**
+     * The firewall settings for Symfony security module
+     * @var array
+     */
     protected $firewalls = array(
         'login' => array(
             'pattern' => '^/auth/login$',
@@ -47,7 +56,7 @@ class Application extends \Silex\Application
         /* Twig Template Engine */
         $app->register(new \Silex\Provider\TwigServiceProvider(),
             array(
-            'twig.path' => __DIR__."/../views",
+            'twig.path' => realpath($config->viewsDir),
         ));
 
         /* Root controller */
@@ -57,9 +66,13 @@ class Application extends \Silex\Application
         if (!file_exists(ROOT_DIR.'/.htaccess') && file_exists(LIB_DIR.'/.htaccess')) {
             copy(LIB_DIR.'/.htaccess', ROOT_DIR.'/.htaccess');
         }
-
     }
 
+    /**
+     * Add & activate a security provider
+     * @param \GitSync\Security\SecurityProviderInterface $provider
+     * @param string $id
+     */
     public function addSecurityProvider(Security\SecurityProviderInterface $provider,
                                         $id = null)
     {
@@ -107,21 +120,38 @@ class Application extends \Silex\Application
         $app['security.firewalls'] = $this->firewalls;
     }
 
+    /**
+     * Check if security is enabled
+     * @return boolean
+     */
     public function isSecurityEnabled()
     {
         return isset($this['user']);
     }
 
+    /**
+     * Get the logged in user, null if security is not enabled
+     * @return \Symfony\Component\Security\Core\User\UserInterface
+     */
     public function user()
     {
         return (isset($this['user']) ? $this['user'] : null);
     }
 
+    /**
+     * Get the user id, null if security is not enabled
+     * @return string
+     */
     public function uid()
     {
         return (($user = $this->user()) ? $user->getUsername() : null);
     }
 
+    /**
+     * Check if the currently logged in user has the needed role
+     * @param string $role The needed role
+     * @return boolean
+     */
     public function isGranted($role)
     {
         return ($this->user() && $this['security.authorization_checker']->isGranted($role));

@@ -6,10 +6,10 @@
 <div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
 <div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranch()}}</div>
 {% if context.isDirty() %}
-<a class="ui red label"><i class="warning sign icon"></i>Unsync</a>
+<div class="ui red label"><i class="warning sign icon"></i>Unsync</div>
 {% endif %}
 {% if not context.isLatest() %}
-<a class="ui orange label"><i class="warning sign icon"></i>Outdated</a>
+<div class="ui orange label"><i class="warning sign icon"></i>Outdated</div>
 {% endif %}
 
 {% if repoStatus.count() %}
@@ -47,7 +47,10 @@
 				{% if revision.getCommit() == head and not context.isDirty() %}
 				<i class="ui check square icon"></i>OK
 				{% else %}
-				<a href="{{app.path('context_checkout', {'ctxid': ctxid, 'ref': revision.getRef()})}}" class="ui primary button">Sync</a>
+				<form action="{{app.path('context_checkout', {'ctxid': ctxid})}}" method="post" onSubmit="return confirm('Sync with {{revision.getRef(true)}}?')">
+				<input type="hidden" name="ref" value="{{revision.getRef()}}" />
+				<input type="submit" class="ui primary button" value="Sync" />
+				</form>
 				{% endif %}</td>
 		</tr>
 		{% else %}
