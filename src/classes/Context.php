@@ -232,8 +232,9 @@ class Context
      */
     public function isLatest()
     {
-        $repo = $this->getRepo();
-        return $repo->getCommit('HEAD') == $repo->getBranch($this->branch)->getLastCommit();
+        $repo   = $this->getRepo();
+        $branch = $repo->getBranch($this->branch);
+        return $branch->getCurrent() && $repo->getCommit('HEAD') == $branch->getLastCommit();
     }
 
     /**
@@ -277,7 +278,8 @@ class Context
         }
         $repo->checkout($ref);
         $repo->updateSubmodule(true, true, true);
-        $this->log(Logger::INFO, "Successfully sync directory with a revision", array('ref' => $ref));
+        $this->log(Logger::INFO, "Successfully sync directory with a revision",
+            array('ref' => $ref));
     }
 
     /**
