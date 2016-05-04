@@ -3,7 +3,7 @@
 	"license": "GPL",
 	"type": "project",
 	"description": "GitSync allows system admin to sync contents of a directory with a specific branch of a Git repository.",
-	"keywords": ["git","sync"],
+	"keywords": ["git", "sync"],
 	"homepage": "https://github.com/MLukman/GitSync",
 	"authors": [
 		{
@@ -15,7 +15,7 @@
 		"php": ">=5.4.0",
 		"silex/silex": "~1.3",
 		"symfony/twig-bridge": "^3.0",
-		"cypresslab/gitelephant": "dev-master",
+		"cypresslab/gitelephant": "1.*",
 		"monolog/monolog": "1.*",
 		"symfony/security": "^3.0",
 		"symfony/ldap": "^3.0"

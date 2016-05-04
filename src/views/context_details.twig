@@ -38,7 +38,7 @@
 		<tr{% if revision.getCommit().getSHA() == head.getSHA() %} class="active"{% endif %}>
 			<td class="collapsing">{{revision.getDate().format('Y-m-d H:i:s')}}</td>
 			<td class="center aligned collapsing">
-			{% for tag in revision.getTags() %}<span class="ui tag label">{{tag}}</span>
+			{% for tag in revision.getTags() %}<span class="ui blue tag label">{{tag}}</span>
 			{% else %}{{revision.getSHA(true)}}
 			{% endfor %}
 			</td>

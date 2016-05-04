@@ -47,15 +47,32 @@ class Context extends \GitSync\Base\Controller
             ));
         }
 
-        $repo = $context->getRepo();
+        $repo      = $context->getRepo();
+        $head      = $context->getHead();
+        $revisions = $context->getLatestRevisions();
 
+        /* If HEAD is not in the list of revisions (most probably due to the directory
+         * is on a different branch) then add HEAD to the top of the list
+         */
+        $showHead = true;
+        foreach ($revisions as $rev) {
+            if ($rev->getCommit()->getSha() == $head->getSha()) {
+                $showHead = false;
+                break;
+            }
+        }
+        if ($showHead) {
+            array_unshift($revisions, new \GitSync\Revision($head));
+        }
+
+        /* Display */
         return $this->renderDisplay($this->app['config']->contextDetailsView,
                 array(
                 'ctxid' => $ctxid,
                 'context' => $context,
-                'head' => $context->getHead(),
+                'head' => $head,
                 'repoStatus' => $repo->getStatus()->all(),
-                'revisions' => $context->getLatestRevisions(),
+                'revisions' => $revisions,
         ));
     }
 
