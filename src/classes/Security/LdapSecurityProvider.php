@@ -3,6 +3,7 @@
 namespace GitSync\Security;
 
 use Symfony\Component\Ldap\LdapClient;
+use Symfony\Component\Security\Core\Authentication\Provider\AuthenticationProviderInterface;
 use Symfony\Component\Security\Core\Authentication\Provider\LdapBindAuthenticationProvider;
 use Symfony\Component\Security\Core\User\InMemoryUserProvider;
 use Symfony\Component\Security\Core\User\User;
@@ -41,15 +42,9 @@ class LdapSecurityProvider implements SecurityProviderInterface
     }
 
     /**
-     * Add a user to the list of authenticated users
-     * @param string $userid The user id
-     * @param array $role The array of user roles: ROLE_USER, ROLE_ADMIN, ROLE_SUPERADMIN
+     * 
+     * @return AuthenticationProviderInterface
      */
-    public function addUser($userid, array $role = array('ROLE_ADMIN'))
-    {
-        $this->userProvider->createUser(new User($userid, null, $role));
-    }
-
     public function getAuthenticationProvider(\Silex\Application $app,
                                               $providerKey)
     {
@@ -59,6 +54,11 @@ class LdapSecurityProvider implements SecurityProviderInterface
                 $this->dnString);
         }
         return $this->authenticationProvider;
+    }
+
+    public function addUser($userid, array $role = array('ROLE_ADMIN'))
+    {
+        $this->userProvider->createUser(new User($userid, null, $role));
     }
 
     public function getUserProvider()

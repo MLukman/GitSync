@@ -3,10 +3,14 @@
 namespace GitSync\Security;
 
 use Symfony\Component\Security\Core\Authentication\Provider\SimpleAuthenticationProvider;
+use Symfony\Component\Security\Core\Authentication\SimpleAuthenticatorInterface;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Symfony\Component\Security\Core\User\InMemoryUserProvider;
 use Symfony\Component\Security\Core\User\User;
+use Symfony\Component\Security\Core\User\UserProviderInterface;
 
-class SimpleSecurityProvider implements SecurityProviderInterface
+class SimpleSecurityProvider implements SecurityProviderInterface, SimpleAuthenticatorInterface
 {
     /**
      * Authentication Provider
@@ -25,17 +29,15 @@ class SimpleSecurityProvider implements SecurityProviderInterface
         $this->userProvider = new InMemoryUserProvider();
     }
 
-    /**
-     * Add a user to the list of authenticated users
-     * @param type $userid User id
-     * @param type $password Plain password
-     * @param array $role The array of user roles: ROLE_USER, ROLE_ADMIN, ROLE_SUPERADMIN
-     */
     public function addUser($userid, $password, array $role = array('ROLE_USER'))
     {
         $this->userProvider->createUser(new User($userid, $password, $role));
     }
 
+    /**
+     *
+     * @return AuthenticationProviderInterface
+     */
     public function getAuthenticationProvider(\Silex\Application $app,
                                               $providerKey)
     {
@@ -49,5 +51,23 @@ class SimpleSecurityProvider implements SecurityProviderInterface
     public function getUserProvider()
     {
         return $this->userProvider;
+    }
+
+    public function authenticateToken(TokenInterface $token,
+                                      UserProviderInterface $userProvider,
+                                      $providerKey)
+    {
+        if (($user = $userProvider->loadUserByUsername($token->getUsername())) && ($user->getPassword()
+            == $token->getCredentials())) {
+            return new UsernamePasswordToken(
+                $user, $user->getPassword(), $providerKey, $user->getRoles()
+            );
+        }
+    }
+
+    public function supportsToken(TokenInterface $token, $providerKey)
+    {
+        return $token instanceof UsernamePasswordToken && $token->getProviderKey()
+            === $providerKey;
     }
 }
