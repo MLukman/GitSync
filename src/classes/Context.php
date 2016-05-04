@@ -184,8 +184,7 @@ class Context
                 $repo->addRemote('origin', $this->remote_url);
                 $repo->fetch('origin');
                 $repo->reset('origin/'.$this->branch, 'hard');
-                $repo->checkout($this->branch);
-                $repo->updateSubmodule(true, true, true);
+                $this->checkout($this->branch);
             } catch (\Exception $e2) {
                 $fs = new \Symfony\Component\Filesystem\Filesystem();
                 $fs->remove(realpath($this->path.'/.git/'));
@@ -227,7 +226,7 @@ class Context
         if (!$this->logger) {
             $this->logger = new Logger('logger',
                 array(
-                new StreamLogger(LIB_DIR.'/logs/'.$this->logfile)));
+                new StreamLogger(GITSYNC_LIB_DIR.'/logs/'.$this->logfile)));
         }
         if ($uid) {
             $context['userid'] = $uid;
@@ -255,7 +254,12 @@ class Context
             $repo->clean();
         }
         $repo->checkout($ref);
-        $repo->updateSubmodule(true, true, true);
+        try {
+            $repo->updateSubmodule(true, true, true);
+        } catch (\Exception $e) {
+            // old version of Git <1.8.1.6 don't have --force flag
+            $repo->updateSubmodule(true, true);
+        }
         $this->log(Logger::INFO, "Successfully sync directory with a revision",
             array('ref' => $ref));
     }

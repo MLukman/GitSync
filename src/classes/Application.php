@@ -2,13 +2,7 @@
 
 namespace GitSync;
 
-// Directory where index.php is running from
-define('LIB_DIR', realpath(__DIR__.'/../../'));
-
-// Directory where index.php is running from
-define('ROOT_DIR', dirname($_SERVER["SCRIPT_FILENAME"]));
-
-define('ROOT_PATH', 'context_index');
+include_once __DIR__.'/../constants.php';
 
 class Application extends \Silex\Application
 {
@@ -49,7 +43,7 @@ class Application extends \Silex\Application
         $app->register(new \Silex\Provider\SessionServiceProvider());
         $app->register(new \Silex\Provider\MonologServiceProvider(),
             array(
-            'monolog.logfile' => LIB_DIR.'/logs/application.log',
+            'monolog.logfile' => GITSYNC_LIB_DIR.'/logs/application.log',
             'monolog.level' => \Monolog\Logger::WARNING,
         ));
 
@@ -63,8 +57,8 @@ class Application extends \Silex\Application
         $app->mount('/', new \GitSync\Provider\RootControllerProvider());
 
         /* if .htaccess file is missing */
-        if (!file_exists(ROOT_DIR.'/.htaccess') && file_exists(LIB_DIR.'/.htaccess')) {
-            copy(LIB_DIR.'/.htaccess', ROOT_DIR.'/.htaccess');
+        if (!file_exists(GITSYNC_ROOT_DIR.'/.htaccess') && file_exists(GITSYNC_LIB_DIR.'/.htaccess')) {
+            copy(GITSYNC_LIB_DIR.'/.htaccess', GITSYNC_ROOT_DIR.'/.htaccess');
         }
     }
 

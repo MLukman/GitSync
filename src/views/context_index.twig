@@ -19,7 +19,9 @@
 		<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
 		<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranch()}}</div>
 	</div>
-	{% if context.isDirty() %}
+	{% if not context.isInitialized() %}
+	<div class="ui red top right attached label"><i class="warning sign icon"></i>Not a Git repo</div>
+	{% elseif context.isDirty() %}
 	<div class="ui red top right attached label"><i class="warning sign icon"></i>Unsync</div>
 	{% elseif not context.isLatest() %}
 	<div class="ui orange top right attached label"><i class="warning sign icon"></i>Outdated</div>
