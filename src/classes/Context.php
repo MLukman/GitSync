@@ -249,11 +249,18 @@ class Context
     public function checkout($ref)
     {
         $repo = $this->getRepo();
+        // reset any changes
         if ($repo->isDirty()) {
             $repo->reset('HEAD', 'hard');
             $repo->clean();
         }
-        $repo->checkout($ref);
+        // checkout branch name to prevent detached head
+        if ($repo->getCommit($ref) == $repo->getBranch($this->branch)->getLastCommit()) {
+            $repo->checkout($this->branch);
+        } else {
+            $repo->checkout($ref);
+        }
+        // update submodules
         try {
             $repo->updateSubmodule(true, true, true);
         } catch (\Exception $e) {
