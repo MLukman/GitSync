@@ -239,7 +239,7 @@ class Context
      */
     public function fetch()
     {
-        $this->getRepo()->fetch($this->getRemote()->getName());
+        $this->getRepo()->fetch($this->getRemote(), $this->branch, true);
     }
 
     /**
