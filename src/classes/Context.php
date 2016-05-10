@@ -44,6 +44,12 @@ class Context
     protected $remote_url;
 
     /**
+     * The git remote name
+     * @var string
+     */
+    protected $remote_name;
+
+    /**
      * The branch name to track
      * @var string
      */
@@ -112,6 +118,27 @@ class Context
     public function getRemoteUrl()
     {
         return $this->remote_url;
+    }
+
+    /**
+     * Get remote name
+     * @return string
+     */
+    public function getRemoteName()
+    {
+        if (!$this->remote_name) {
+            $this->remote_name = $this->getRemote()->getName();
+        }
+        return $this->remote_name;
+    }
+
+    /**
+     * Get remote branch name
+     * @return string
+     */
+    public function getRemoteBranch()
+    {
+        return $this->getRemoteName().'/'.$this->branch;
     }
 
     /**
@@ -211,7 +238,7 @@ class Context
     {
         $repo   = $this->getRepo();
         $branch = $repo->getBranch($this->branch);
-        return $branch->getCurrent() && $repo->getCommit('HEAD') == $branch->getLastCommit();
+        return $branch->getCurrent() && $repo->getCommit('HEAD')->getSha() == $repo->getCommit($this->getRemoteBranch())->getSha();
     }
 
     /**
@@ -239,7 +266,7 @@ class Context
      */
     public function fetch()
     {
-        $this->getRepo()->fetch($this->getRemote(), $this->branch, true);
+        $this->getRepo()->fetch($this->getRemoteName(), $this->branch, true);
     }
 
     /**
@@ -297,7 +324,7 @@ class Context
             $tags[$sha][] = $tag;
         }
         $revisions = array();
-        foreach ($repo->getLog($this->branch, null, $limit) as $commit) {
+        foreach ($repo->getLog($this->getRemoteBranch(), null, $limit) as $commit) {
             $rev = new Revision($commit);
             $sha = $commit->getSHA();
             if (isset($tags[$sha])) {
