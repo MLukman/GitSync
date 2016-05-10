@@ -13,6 +13,8 @@ class Context
 {
 
     use \GitSync\Security\SecuredAccessTrait;
+    const GS_BRANCH = 'gitsync';
+
     /**
      * Git repo manager object
      * @var \GitSync\Repository
@@ -36,6 +38,12 @@ class Context
      * @var string
      */
     protected $path;
+
+    /**
+     * The remote object
+     * @var \GitElephant\Objects\Remote
+     */
+    protected $remote;
 
     /**
      * The git remote URL
@@ -112,36 +120,6 @@ class Context
     }
 
     /**
-     * Get remote URL
-     * @return string
-     */
-    public function getRemoteUrl()
-    {
-        return $this->remote_url;
-    }
-
-    /**
-     * Get remote name
-     * @return string
-     */
-    public function getRemoteName()
-    {
-        if (!$this->remote_name) {
-            $this->remote_name = $this->getRemote()->getName();
-        }
-        return $this->remote_name;
-    }
-
-    /**
-     * Get remote branch name
-     * @return string
-     */
-    public function getRemoteBranch()
-    {
-        return $this->getRemoteName().'/'.$this->branch;
-    }
-
-    /**
      * Get branch name
      * @return string
      */
@@ -177,15 +155,51 @@ class Context
      */
     public function getRemote()
     {
+        if ($this->remote) {
+            return $this->remote;
+        }
+
         $repo = $this->getRepo();
         try {
-            return $repo->getRemote('gitsync');
+            $this->remote = $repo->getRemote('gitsync');
         } catch (\Exception $e) {
             if (strpos($e->getMessage(), "remote doesn't exist")) {
-                return $repo->getRemote('origin');
+                $this->remote = $repo->getRemote('origin');
+            } else {
+                throw $e;
             }
-            throw $e;
         }
+        return $this->remote;
+    }
+
+    /**
+     * Get remote URL
+     * @return string
+     */
+    public function getRemoteUrl()
+    {
+        return $this->remote_url;
+    }
+
+    /**
+     * Get remote name
+     * @return string
+     */
+    public function getRemoteName()
+    {
+        if (!$this->remote_name) {
+            $this->remote_name = $this->getRemote()->getName();
+        }
+        return $this->remote_name;
+    }
+
+    /**
+     * Get remote branch name
+     * @return string
+     */
+    public function getRemoteBranch()
+    {
+        return $this->getRemoteName().'/'.$this->branch;
     }
 
     /**
@@ -209,9 +223,9 @@ class Context
             $repo->init();
             try {
                 $repo->addRemote('origin', $this->remote_url);
-                $repo->fetch('origin');
-                $repo->reset('origin/'.$this->branch, 'hard');
-                $this->checkout($this->branch);
+                $repo->fetch('origin', $this->branch, true);
+                $repo->createBranch($this->branch, $this->getRemoteBranch());
+                $repo->checkout($this->branch);
             } catch (\Exception $e2) {
                 $fs = new \Symfony\Component\Filesystem\Filesystem();
                 $fs->remove(realpath($this->path.'/.git/'));
@@ -238,7 +252,7 @@ class Context
     {
         $repo   = $this->getRepo();
         $branch = $repo->getBranch($this->branch);
-        return $branch->getCurrent() && $repo->getCommit('HEAD')->getSha() == $repo->getCommit($this->getRemoteBranch())->getSha();
+        return $branch->getCurrent() && $this->getHead()->getSha() == $repo->getCommit($this->getRemoteBranch())->getSha();
     }
 
     /**
@@ -273,7 +287,7 @@ class Context
      * Checkout specific commit or tag or reference
      * @param string $ref
      */
-    public function checkout($ref)
+    public function checkout($ref, $new_branch = null)
     {
         $repo = $this->getRepo();
         // reset any changes
@@ -281,12 +295,23 @@ class Context
             $repo->reset('HEAD', 'hard');
             $repo->clean();
         }
+
         // checkout branch name to prevent detached head
-        if ($repo->getCommit($ref) == $repo->getBranch($this->branch)->getLastCommit()) {
+        if ($repo->getCommit($ref)->getSha() == $repo->getBranch($this->branch)->getSha()) {
             $repo->checkout($this->branch);
+            if ($repo->getBranch(self::GS_BRANCH)) {
+                $repo->deleteBranch(self::GS_BRANCH, true);
+            }
         } else {
+            // to avoid detached head, create/re-create branch when checkout a commit
             $repo->checkout($ref);
+            if ($repo->getBranch(self::GS_BRANCH)) {
+                $repo->deleteBranch(self::GS_BRANCH, true);
+            }
+            $repo->createBranch(self::GS_BRANCH, $ref);
+            $repo->checkout(self::GS_BRANCH);
         }
+
         // update submodules
         try {
             $repo->updateSubmodule(true, true, true);
