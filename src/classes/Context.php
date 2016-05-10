@@ -2,6 +2,8 @@
 
 namespace GitSync;
 
+include_once __DIR__.'/../constants.php';
+
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler as StreamLogger;
 
@@ -68,6 +70,12 @@ class Context
      * @var \Monolog\Logger
      */
     protected $logger;
+
+    /**
+     * Log files directory
+     * @var string
+     */
+    protected $logdir = GITSYNC_LIB_DIR.'/logs';
 
     /**
      * Constructor
@@ -155,19 +163,8 @@ class Context
      */
     public function getRemote()
     {
-        if ($this->remote) {
-            return $this->remote;
-        }
-
-        $repo = $this->getRepo();
-        try {
-            $this->remote = $repo->getRemote('gitsync');
-        } catch (\Exception $e) {
-            if (strpos($e->getMessage(), "remote doesn't exist")) {
-                $this->remote = $repo->getRemote('origin');
-            } else {
-                throw $e;
-            }
+        if (!$this->remote) {
+            $this->remote = $this->getRepo()->getRemote('origin');
         }
         return $this->remote;
     }
@@ -223,9 +220,12 @@ class Context
             $repo->init();
             try {
                 $repo->addRemote('origin', $this->remote_url);
-                $repo->fetch('origin', $this->branch, true);
+                $repo->fetch('origin');
+                $repo->fetch('origin', null, true);
                 $repo->createBranch($this->branch, $this->getRemoteBranch());
+                $repo->stage();
                 $repo->checkout($this->branch);
+                $repo->reset();
             } catch (\Exception $e2) {
                 $fs = new \Symfony\Component\Filesystem\Filesystem();
                 $fs->remove(realpath($this->path.'/.git/'));
@@ -267,7 +267,7 @@ class Context
         if (!$this->logger) {
             $this->logger = new Logger('logger',
                 array(
-                new StreamLogger(GITSYNC_LIB_DIR.'/logs/'.$this->logfile)));
+                new StreamLogger($this->logdir.'/'.$this->logfile)));
         }
         if ($uid) {
             $context['userid'] = $uid;
@@ -360,5 +360,12 @@ class Context
             $revisions[] = $rev;
         }
         return $revisions;
+    }
+
+    public function setLogDir($newlogdir)
+    {
+        if (is_dir($newlogdir) && is_writable($newlogdir)) {
+            $this->logdir = $newlogdir;
+        }
     }
 }

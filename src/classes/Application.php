@@ -43,7 +43,7 @@ class Application extends \Silex\Application
         $app->register(new \Silex\Provider\SessionServiceProvider());
         $app->register(new \Silex\Provider\MonologServiceProvider(),
             array(
-            'monolog.logfile' => GITSYNC_LIB_DIR.'/logs/application.log',
+            'monolog.logfile' => $config->getLogDir().'/application.log',
             'monolog.level' => \Monolog\Logger::WARNING,
         ));
 

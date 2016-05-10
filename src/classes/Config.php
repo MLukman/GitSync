@@ -2,6 +2,8 @@
 
 namespace GitSync;
 
+include_once __DIR__.'/../constants.php';
+
 class Config
 {
     /**
@@ -41,12 +43,19 @@ class Config
     public $contextInitView = 'context_init';
 
     /**
-     * Add context
-     * @param \GitSync\Context $config
+     * Log files directory
+     * @var string
      */
-    public function addContext(\GitSync\Context $config)
+    protected $logdir = GITSYNC_LIB_DIR.'/logs';
+
+    /**
+     * Add context
+     * @param \GitSync\Context $context
+     */
+    public function addContext(\GitSync\Context $context)
     {
-        $this->contexts[$config->getId()] = $config;
+        $context->setLogDir($this->logdir);
+        $this->contexts[$context->getId()] = $context;
     }
 
     /**
@@ -66,5 +75,26 @@ class Config
     public function getContext($id)
     {
         return (isset($this->contexts[$id]) ? $this->contexts[$id] : null);
+    }
+
+    /**
+     * Get log directory
+     * @return string
+     */
+    public function getLogDir()
+    {
+        return $this->logdir;
+    }
+
+    /**
+     * Set log directory
+     * @param string $newlogdir Log directory
+     */
+    public function setLogDir($newlogdir)
+    {
+        $this->logdir = $newlogdir;
+        foreach ($this->contexts as $context) {
+            $context->setLogDir($this->logdir);
+        }
     }
 }
