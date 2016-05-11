@@ -295,12 +295,18 @@ class Context
             $repo->clean();
         }
 
-        // checkout branch name to prevent detached head
-        if ($repo->getCommit($ref)->getSha() == $repo->getBranch($this->branch)->getSha()) {
+        $refSha = $repo->getCommit($ref)->getSha();
+        if ($refSha == $repo->getCommit($this->branch)->getSha()) {
+            // checkout branch name to prevent detached head
             $repo->checkout($this->branch);
             if ($repo->getBranch(self::GS_BRANCH)) {
                 $repo->deleteBranch(self::GS_BRANCH, true);
             }
+        } elseif ($refSha == $repo->getCommit($this->getRemoteBranch())->getSha()) {
+            // merge fast-forward
+            $repo->checkout($this->branch);
+            $repo->merge(new RemoteBranch($repo, $this->getRemoteName(),
+                $this->branch), null, 'ff-only');
         } else {
             // to avoid detached head, create/re-create branch when checkout a commit
             $repo->checkout($ref);
