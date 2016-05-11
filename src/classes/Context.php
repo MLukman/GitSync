@@ -78,6 +78,12 @@ class Context
     protected $logdir = GITSYNC_LIB_DIR.'/logs';
 
     /**
+     * Criteria to list revisions. If integer then limit by count, otherwise list revisions until a tag with same value is found.
+     * @var string|integer
+     */
+    protected $list_revisions_until = 10;
+
+    /**
      * Constructor
      * @param string $path The filesystem path pointing to the directory
      * @param string $remote_url The git remote URL
@@ -220,7 +226,8 @@ class Context
             $repo->init();
             try {
                 $repo->addRemote('origin', $this->remote_url);
-                $repo->fetch('origin', '+'.$this->branch, true);
+                $repo->fetch('origin', null, false);
+                $repo->fetch('origin', null, true);
                 $repo->createBranch($this->branch, $this->getRemoteBranch());
                 $repo->stage();
                 $repo->checkout($this->branch);
@@ -339,11 +346,17 @@ class Context
 
     /**
      * Get the list of last few commits in the selected branch
-     * @param int $limit Number of commits to return, default to 10
      * @return \GitSync\Revision[]
      */
-    public function getLatestRevisions($limit = 10)
+    public function getLatestRevisions()
     {
+        if (is_int($this->list_revisions_until)) {
+            $limit    = $this->list_revisions_until;
+            $stopwhen = null;
+        } else {
+            $limit    = 100;
+            $stopwhen = $this->list_revisions_until;
+        }
         $repo = $this->getRepo();
         $tags = array();
         foreach ($repo->getTags() as $tag) {
@@ -354,23 +367,45 @@ class Context
             $tags[$sha][] = $tag;
         }
         $revisions = array();
+        $continue  = true;
         foreach ($repo->getLog($this->getRemoteBranch(), null, $limit) as $commit) {
-            $rev = new Revision($commit);
-            $sha = $commit->getSHA();
-            if (isset($tags[$sha])) {
-                foreach ($tags[$sha] as $tag) {
-                    $rev->addTag($tag->getName());
+            if ($continue) {
+                $commit->first()->getTree();
+                $rev = new Revision($commit);
+                $sha = $commit->getSHA();
+                if (isset($tags[$sha])) {
+                    foreach ($tags[$sha] as $tag) {
+                        $tagname = $tag->getName();
+                        if ($tagname == $stopwhen) {
+                            $continue = false;
+                        }
+                        $rev->addTag($tagname);
+                    }
                 }
+                $revisions[] = $rev;
             }
-            $revisions[] = $rev;
         }
         return $revisions;
     }
 
+    /**
+     * Set log files directory
+     * @param string $newlogdir
+     */
     public function setLogDir($newlogdir)
     {
         if (is_dir($newlogdir) && is_writable($newlogdir)) {
             $this->logdir = $newlogdir;
         }
+    }
+
+    /**
+     * Set the criteria to list revisions.
+     * If integer then limit by count, otherwise list revisions until a tag with same value is found.
+     * @param string|integer $list_revisions_until
+     */
+    public function setListRevisionUntil($list_revisions_until)
+    {
+        $this->list_revisions_until = $list_revisions_until;
     }
 }
