@@ -370,7 +370,6 @@ class Context
         $continue  = true;
         foreach ($repo->getLog($this->getRemoteBranch(), null, $limit) as $commit) {
             if ($continue) {
-                $commit->first()->getTree();
                 $rev = new Revision($commit);
                 $sha = $commit->getSHA();
                 if (isset($tags[$sha])) {
