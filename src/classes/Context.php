@@ -220,8 +220,7 @@ class Context
             $repo->init();
             try {
                 $repo->addRemote('origin', $this->remote_url);
-                $repo->fetch('origin');
-                $repo->fetch('origin', null, true);
+                $repo->fetch('origin', '+'.$this->branch, true);
                 $repo->createBranch($this->branch, $this->getRemoteBranch());
                 $repo->stage();
                 $repo->checkout($this->branch);
@@ -280,7 +279,7 @@ class Context
      */
     public function fetch()
     {
-        $this->getRepo()->fetch($this->getRemoteName(), $this->branch, true);
+        $this->getRepo()->fetch($this->getRemoteName(), '+'.$this->branch, true);
     }
 
     /**
