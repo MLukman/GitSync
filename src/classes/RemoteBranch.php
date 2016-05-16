@@ -29,8 +29,8 @@ class RemoteBranch extends \GitElephant\Objects\Branch
                                 $remote_name = 'origin', $branch_name = 'master')
     {
         $this->repository = $repository;
-        $this->name       = trim($remote_name).'/'.trim($branch_name);
-        $this->fullRef    = 'refs/remotes/'.$this->name;
+        $this->setName(trim($remote_name).'/'.trim($branch_name));
+        $this->setFullRef('refs/remotes/'.$this->getName());
         $this->createFromCommand();
     }
 
@@ -41,16 +41,17 @@ class RemoteBranch extends \GitElephant\Objects\Branch
      */
     private function createFromCommand()
     {
+        $branchName  = 'remotes/'.$this->getName();
         $command     = BranchCommand::getInstance($this->getRepository())->listBranches(true);
         $outputLines = $this->repository->getCaller()->execute($command)->getOutputLines(true);
         foreach ($outputLines as $outputLine) {
             $matches = static::getMatches($outputLine);
-            if ('remotes/'.$this->name === $matches[1]) {
+            if ($branchName === $matches[1]) {
                 $this->parseOutputLine($outputLine);
                 return;
             }
         }
         throw new InvalidBranchNameException(sprintf('The %s branch doesn\'t exists',
-            $this->name));
+            $branchName));
     }
 }

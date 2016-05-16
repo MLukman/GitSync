@@ -20,14 +20,10 @@ class Application extends \Silex\Application
      */
     protected $firewalls = array(
         'login' => array(
-            'pattern' => '^/auth/login$',
+            'pattern' => '^/login$',
         ),
         'secured' => array(
             'pattern' => '^/',
-            'form' => array(
-                'login_path' => '/auth/login',
-                'check_path' => '/admin/login_check'
-            ),
             'logout' => true,
     ));
 
@@ -77,13 +73,23 @@ class Application extends \Silex\Application
             $app->register(new \Silex\Provider\SecurityServiceProvider(),
                 array('security.firewalls' => array()));
 
-            /* Auth controllers */
-            $app->mount('/auth', new \GitSync\Provider\AuthControllerProvider());
+            /* Auth controller */
+            $app['auth.controller'] = $app->share(function() use ($app) {
+                return new \GitSync\Controller\Auth($app);
+            });
+
+            $app->get('/login', 'auth.controller:login')->bind('login');
         }
 
         $id = $id ? : 'secure'.rand(100, 999);
 
         $app['security.authentication_listener.factory.'.$id] = $app->protect(function ($name, $options) use ($app, $id, $provider) {
+            static $userProviders = array();
+
+            if (!isset($userProviders[$name])) {
+                $userProviders[$name] = array();
+            }
+            $userProviders[$name][] = $provider->getUserProvider();
 
             $app['security.authentication_provider.'.$name.'.'.$id] = $app->share(function () use ($app, $provider, $name) {
                 return $provider->getAuthenticationProvider($app, $name);
@@ -92,11 +98,13 @@ class Application extends \Silex\Application
             $app['security.authentication_listener.'.$name.'.'.$id] = $app['security.authentication_listener.form._proto']($name,
                 $options);
 
-            $app['security.entry_point.'.$name.'.form'] = $app['security.entry_point.form._proto']($name,
-                $options);
+            if (!isset($app['security.entry_point.'.$name.'.form'])) {
+                $app['security.entry_point.'.$name.'.form'] = $app['security.entry_point.form._proto']($name,
+                    $options);
+            }
 
             $app['security.context_listener.'.$name] = $app['security.context_listener._proto']($name,
-                array($provider->getUserProvider()));
+                $userProviders[$name]);
 
             return array(
                 'security.authentication_provider.'.$name.'.'.$id, // the authentication provider id
@@ -107,7 +115,7 @@ class Application extends \Silex\Application
         });
 
         $this->firewalls['secured'][$id] = array(
-            'login_path' => '/auth/login',
+            'login_path' => '/login',
             'check_path' => '/admin/login_check'
         );
 

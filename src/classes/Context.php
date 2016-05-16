@@ -315,8 +315,9 @@ class Context
         } elseif ($refSha == $repo->getCommit($this->getRemoteBranch())->getSha()) {
             // merge fast-forward
             $repo->checkout($this->branch);
-            $repo->merge(new RemoteBranch($repo, $this->getRemoteName(),
-                $this->branch), null, 'ff-only');
+            $remotebranch = new RemoteBranch($repo, $this->getRemoteName(),
+                $this->branch);
+            $repo->merge($remotebranch, null, 'ff-only');
         } else {
             // to avoid detached head, create/re-create branch when checkout a commit
             $repo->checkout($ref);
