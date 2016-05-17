@@ -309,9 +309,6 @@ class Context
         if ($refSha == $repo->getCommit($this->branch)->getSha()) {
             // checkout branch name to prevent detached head
             $repo->checkout($this->branch);
-            if ($repo->getBranch(self::GS_BRANCH)) {
-                $repo->deleteBranch(self::GS_BRANCH, true);
-            }
         } elseif ($refSha == $repo->getCommit($this->getRemoteBranch())->getSha()) {
             // merge fast-forward
             $repo->checkout($this->branch);

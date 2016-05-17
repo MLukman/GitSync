@@ -16,22 +16,9 @@ class Context extends \GitSync\Base\Controller
 
     public function index(Request $request)
     {
-        if ($this->app->isSecurityEnabled() && !$this->app->isGranted('ROLE_ADMIN')) {
-            $uid = $this->app->uid();
-
-            $contexts = array();
-            foreach ($this->app['config']->getContexts() as $context) {
-                if ($context->isUidAllowed($uid)) {
-                    $contexts[] = $context;
-                }
-            }
-        } else {
-            $contexts = $this->app['config']->getContexts();
-        }
-
         return $this->renderDisplay($this->app['config']->contextIndexView,
                 array(
-                'contexts' => $contexts,
+                'contexts' => $this->getAllContexts(),
         ));
     }
 
@@ -76,7 +63,16 @@ class Context extends \GitSync\Base\Controller
         ));
     }
 
-    public function refresh(Request $request)
+    public function refresh(Request $request, $ctxid)
+    {
+        if (($context = $this->getContext($ctxid))) {
+            $context->fetch();
+        }
+        return new RedirectResponse($this->app->path('context_details',
+                array('ctxid' => $ctxid)));
+    }
+
+    public function refreshAll(Request $request)
     {
         foreach ($this->app['config']->getContexts() as $context) {
             $context->fetch();
@@ -116,5 +112,21 @@ class Context extends \GitSync\Base\Controller
             }
         }
         return $context;
+    }
+
+    protected function getAllContexts()
+    {
+        if ($this->app->isSecurityEnabled() && !$this->app->isGranted('ROLE_ADMIN')) {
+            $uid = $this->app->uid();
+
+            $contexts = array();
+            foreach ($this->app['config']->getContexts() as $context) {
+                if ($context->isUidAllowed($uid)) {
+                    $contexts[] = $context;
+                }
+            }
+            return $contexts;
+        }
+        return $this->app['config']->getContexts();
     }
 }

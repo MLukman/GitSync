@@ -3,14 +3,16 @@
 	<div class="content">{{context.getName()}} [{{context.getPath()}}]</div>
 </h1>
 
-<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
-<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranch()}}</div>
-{% if context.isDirty() %}
-<div class="ui red label"><i class="warning sign icon"></i>Unsync</div>
-{% endif %}
-{% if not context.isLatest() %}
-<div class="ui orange label"><i class="warning sign icon"></i>Outdated</div>
-{% endif %}
+<div>
+	<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
+	<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranch()}}</div>
+	{% if context.isDirty() %}
+	<div class="ui red label"><i class="warning sign icon"></i>Unsync</div>
+	{% endif %}
+	{% if not context.isLatest() %}
+	<div class="ui orange label"><i class="warning sign icon"></i>Outdated</div>
+	{% endif %}
+</div>
 
 {% if repoStatus.count() %}
 <h2>Unsync</h2>
@@ -24,6 +26,9 @@
 {% endif %}
 
 <h2>Revisions</h2>
+<form method="get" action="{{app.path('context_refresh', {'ctxid': ctxid})}}" onsubmit="$('#refreshbutton').prop('disabled', true); return true;">
+	<input id="refreshbutton" type="submit" class="ui primary tiny button" value="Refresh from Remote Repositories" />
+</form>
 <table class="ui celled striped sortable table">
 	<thead>
 		<tr>

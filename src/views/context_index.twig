@@ -4,9 +4,9 @@
 </h1>
 
 {% if not app.isSecurityEnabled() or app.isGranted('IS_AUTHENTICATED_FULLY') %}
-<div>
-	<a href="{{app.path('context_refresh')}}" class="ui primary button">Refresh from Remote Repositories</a>
-</div>
+<form method="get" action="{{app.path('context_refresh_all')}}" onsubmit="$('#refreshbutton').prop('disabled', true); return true;">
+	<input id="refreshbutton" type="submit" class="ui primary tiny button" value="Refresh All Contexts from Remote Repositories" />
+</form>
 {% endif %}
 
 {% for id,context in contexts %}
