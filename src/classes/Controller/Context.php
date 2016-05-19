@@ -52,13 +52,18 @@ class Context extends \GitSync\Base\Controller
             array_unshift($revisions, new \GitSync\Revision($head));
         }
 
+        $modifications = array();
+        foreach ($repo->getStatus()->all() as $status) {
+            $modifications[] = new \GitSync\Modification($context, $status);
+        }
+
         /* Display */
         return $this->renderDisplay($this->app['config']->contextDetailsView,
                 array(
                 'ctxid' => $ctxid,
                 'context' => $context,
                 'head' => $head,
-                'repoStatus' => $repo->getStatus()->all(),
+                'modifications' => $modifications,
                 'revisions' => $revisions,
         ));
     }

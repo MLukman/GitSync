@@ -92,11 +92,13 @@ class Context
      * @param string $id The id of this context (default to the last part of the path)
      */
     public function __construct($path, $remote_url, $branch = 'master',
-                                $name = null, $id = null)
+                                $remote_name = 'origin', $name = null,
+                                $id = null)
     {
-        $this->path       = \realpath($path);
-        $this->remote_url = $remote_url;
-        $this->branch     = $branch;
+        $this->path        = \realpath($path);
+        $this->remote_url  = $remote_url;
+        $this->remote_name = $remote_name;
+        $this->branch      = $branch;
         if ($id) {
             $this->id = \preg_replace('/[^a-zA-Z0-9\s]/', '-', $id);
         } else {
@@ -170,7 +172,7 @@ class Context
     public function getRemote()
     {
         if (!$this->remote) {
-            $this->remote = $this->getRepo()->getRemote('origin');
+            $this->remote = $this->getRepo()->getRemote($this->remote_name);
         }
         return $this->remote;
     }
@@ -190,9 +192,6 @@ class Context
      */
     public function getRemoteName()
     {
-        if (!$this->remote_name) {
-            $this->remote_name = $this->getRemote()->getName();
-        }
         return $this->remote_name;
     }
 
@@ -202,7 +201,7 @@ class Context
      */
     public function getRemoteBranch()
     {
-        return $this->getRemoteName().'/'.$this->branch;
+        return $this->remote_name.'/'.$this->branch;
     }
 
     /**
@@ -225,13 +224,12 @@ class Context
             }
             $repo->init();
             try {
-                $repo->addRemote('origin', $this->remote_url);
-                $repo->fetch('origin', null, false);
-                $repo->fetch('origin', null, true);
-                $repo->createBranch($this->branch, $this->getRemoteBranch());
+                $repo->addRemote($this->remote_name, $this->remote_url);
+                $repo->fetch($this->remote_name, null, false);
+                $repo->fetch($this->remote_name, null, true);
                 $repo->stage();
-                $repo->checkout($this->branch);
-                $repo->reset();
+                $repo->createBranch($this->branch, $this->getRemoteBranch());
+                $this->checkout($this->branch);
             } catch (\Exception $e2) {
                 $fs = new \Symfony\Component\Filesystem\Filesystem();
                 $fs->remove(realpath($this->path.'/.git/'));
@@ -286,10 +284,9 @@ class Context
      */
     public function fetch()
     {
-        $repo   = $this->getRepo();
-        $remote = $this->getRemoteName();
-        $repo->fetch($remote, null, false);
-        $repo->fetch($remote, null, true);
+        $repo = $this->getRepo();
+        $repo->fetch($this->remote_name, null, false);
+        $repo->fetch($this->remote_name, null, true);
     }
 
     /**
@@ -298,13 +295,10 @@ class Context
      */
     public function checkout($ref, $new_branch = null)
     {
-        $repo = $this->getRepo();
-        // reset any changes
-        if ($repo->isDirty()) {
-            $repo->reset('HEAD', 'hard');
-            $repo->clean();
-        }
+        // reset and clean first
+        $this->resetAndClean();
 
+        $repo   = $this->getRepo();
         $refSha = $repo->getCommit($ref)->getSha();
         if ($refSha == $repo->getCommit($this->branch)->getSha()) {
             // checkout branch name to prevent detached head
@@ -312,9 +306,8 @@ class Context
         } elseif ($refSha == $repo->getCommit($this->getRemoteBranch())->getSha()) {
             // merge fast-forward
             $repo->checkout($this->branch);
-            $remotebranch = new RemoteBranch($repo, $this->getRemoteName(),
-                $this->branch);
-            $repo->merge($remotebranch, null, 'ff-only');
+            $repo->merge(new RemoteBranch($repo, $this->remote_name,
+                $this->branch), null, 'ff-only');
         } else {
             // to avoid detached head, create/re-create branch when checkout a commit
             $repo->checkout($ref);
@@ -325,6 +318,9 @@ class Context
             $repo->checkout(self::GS_BRANCH);
         }
 
+        // reset and clean again
+        $this->resetAndClean();
+
         // update submodules
         try {
             $repo->updateSubmodule(true, true, true);
@@ -334,6 +330,19 @@ class Context
         }
         $this->log(Logger::INFO, "Successfully sync directory with a revision",
             array('ref' => $ref));
+    }
+
+    /**
+     * "git reset --hard" and then "git clean -d -f -f"
+     */
+    public function resetAndClean()
+    {
+        $repo = $this->getRepo();
+        // reset any changes
+        if ($repo->isDirty()) {
+            $repo->reset('HEAD', 'hard');
+            $repo->clean(true);
+        }
     }
 
     /**

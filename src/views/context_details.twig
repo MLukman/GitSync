@@ -14,15 +14,28 @@
 	{% endif %}
 </div>
 
-{% if repoStatus.count() %}
+{% if modifications|length %}
 <h2>Unsync</h2>
 <p>The following modifications have been found:</p>
-<ul>
-{% set desc = {'': 'Staged', 'M': 'Modified', 'A': 'Added', 'D': 'Deleted', 'R': 'Renamed', 'C': 'Copied', '?': 'New'} %}
-{% for status in repoStatus %}
-<li>({{desc[status.getWorkingTreeStatus()]}}) {{status.getName()}}</li>
-{% endfor %}
-</ul>
+<table class="ui celled striped compact inverted red table">
+	<thead>
+		<tr>
+			<th>Status</th>
+			<th>Filename with path</th>
+			<th>Modified</th>
+		</tr>
+	</thead>
+	<tbody>
+	{% set desc = {'': 'Staged', 'M': 'Modified', 'A': 'Added', 'D': 'Deleted', 'R': 'Renamed', 'C': 'Copied', '?': 'New'} %}
+	{% for mod in modifications %}
+		<tr>
+			<td class="collapsing">{{desc[mod.status]}}</td>
+			<td>{{mod.filename}}</td>
+			<td class="collapsing">{%if mod.mtime %}{{mod.mtime.format('Y-m-d H:i')}}{% else %}-{% endif %}</td>
+		</tr>
+	{% endfor %}
+	</tbody>
+</table>
 {% endif %}
 
 <h2>Revisions</h2>
