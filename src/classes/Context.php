@@ -398,6 +398,33 @@ class Context
     }
 
     /**
+     * Get list of modifications
+     * @param bool $recursive true to recurse submodules; default to false, showing only modified submodule folders
+     * @return \GitSync\Modification[]
+     */
+    public function getModifications($recursive = false)
+    {
+        $modifications = array();
+        $context       = $this;
+        $recurse_find  = function($repo, $path) use (&$recurse_find, $context, $recursive, &$modifications) {
+            foreach ($repo->getStatus()->all() as $status) {
+                $modifications[] = new \GitSync\Modification($this, $status,
+                    $path);
+                $fullpath        = $context->getPath().'/'.$path.$status->getName();
+                if ($recursive && file_exists($fullpath.'/.git')) {
+                    $subrepo = new \GitSync\Repository($fullpath,
+                        new \GitElephant\GitBinary(strncasecmp(PHP_OS, 'WIN', 3)
+                        == 0 ? '"C:\Program Files\Git\bin\git.exe"' : null));
+                    $recurse_find($subrepo, $status->getName());
+                }
+            }
+        };
+        $recurse_find($this->getRepo(), '');
+
+        return $modifications;
+    }
+
+    /**
      * Set log files directory
      * @param string $newlogdir
      */
