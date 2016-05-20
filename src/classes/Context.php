@@ -410,12 +410,14 @@ class Context
             foreach ($repo->getStatus()->all() as $status) {
                 $modifications[] = new \GitSync\Modification($this, $status,
                     $path);
-                $fullpath        = $context->getPath().'/'.$path.$status->getName();
+                $fullpath        = \realpath($context->getPath().'/'.$path.$status->getName());
                 if ($recursive && file_exists($fullpath.'/.git')) {
                     $subrepo = new \GitSync\Repository($fullpath,
                         new \GitElephant\GitBinary(strncasecmp(PHP_OS, 'WIN', 3)
                         == 0 ? '"C:\Program Files\Git\bin\git.exe"' : null));
-                    $recurse_find($subrepo, $status->getName());
+                    $recurse_find($subrepo,
+                        str_replace('\\', '/',
+                            substr($fullpath, 1 + strlen($context->getPath()))).'/');
                 }
             }
         };

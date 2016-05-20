@@ -1,4 +1,7 @@
 ![GitSync logo](ui/gitsync.png)
+
+[![Packagist Version](https://img.shields.io/packagist/v/mlukman/gitsync.svg)](https://packagist.org/packages/mlukman/gitsync) [![Packagist License](https://img.shields.io/packagist/l/mlukman/gitsync.svg)](https://packagist.org/packages/mlukman/gitsync) [![GitHub issues](https://img.shields.io/github/issues/MLukman/GitSync.svg?maxAge=2592000)](https://github.com/MLukman/GitSync)
+
 # Introduction
 
 GitSync is a PHP tool that will sync any directory on your server with a Git repository. It provides GUI for server admins to synchronize a directory with any commit (i.e. revision) of the source code with a click of a button.
