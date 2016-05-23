@@ -4,6 +4,7 @@ namespace GitSync\Controller;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class Context extends \GitSync\Base\Controller
 {
@@ -68,8 +69,8 @@ class Context extends \GitSync\Base\Controller
         if (($context = $this->getContext($ctxid))) {
             $context->fetch();
         }
-        return new RedirectResponse($this->app->path('context_details',
-                array('ctxid' => $ctxid)));
+        return new RedirectResponse($request->query->get('redirect') ? : $this->app->path('context_details',
+                    array('ctxid' => $ctxid)));
     }
 
     public function refreshAll(Request $request)
@@ -86,8 +87,8 @@ class Context extends \GitSync\Base\Controller
         if (($refstr  = $request->request->get('ref'))) {
             $context->checkout($refstr);
         }
-        return new RedirectResponse($this->app->path('context_details',
-                array('ctxid' => $ctxid)));
+        return new RedirectResponse($request->request->get('redirect') ? : $this->app->path('context_details',
+                    array('ctxid' => $ctxid)));
     }
 
     public function init(Request $request, $ctxid)
@@ -103,10 +104,13 @@ class Context extends \GitSync\Base\Controller
      * @param type $name
      * @return \GitSync\Context
      */
-    protected function getContext($name)
+    protected function getContext($name, $skip_security = false)
     {
         $context = $this->app['config']->getContext($name);
-        if ($this->app->isSecurityEnabled()) {
+        if (!$context) {
+            throw new NotFoundHttpException();
+        }
+        if ($this->app->isSecurityEnabled() && !$skip_security) {
             if (!$this->app->isGranted('ROLE_ADMIN') && !$context->isUidAllowed($this->app->uid())) {
                 throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException();
             }

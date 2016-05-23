@@ -305,17 +305,15 @@ class Context
             $repo->checkout($this->branch);
         } elseif ($refSha == $repo->getCommit($this->getRemoteBranch())->getSha()) {
             // merge fast-forward
-            $repo->checkout($this->branch);
-            $repo->merge(new RemoteBranch($repo, $this->remote_name,
-                $this->branch), null, 'ff-only');
+            $repo->checkout($this->branch)->merge(new RemoteBranch($repo,
+                $this->remote_name, $this->branch), null, 'ff-only');
         } else {
             // to avoid detached head, create/re-create branch when checkout a commit
             $repo->checkout($ref);
             if ($repo->getBranch(self::GS_BRANCH)) {
                 $repo->deleteBranch(self::GS_BRANCH, true);
             }
-            $repo->createBranch(self::GS_BRANCH, $ref);
-            $repo->checkout(self::GS_BRANCH);
+            $repo->createBranch(self::GS_BRANCH, $ref)->checkout(self::GS_BRANCH);
         }
 
         // reset and clean again
