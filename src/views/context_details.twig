@@ -14,7 +14,7 @@
 
 <div>
 	<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
-	<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranch()}}</div>
+	<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranchName()}}</div>
 	{% if context.isDirty() %}
 	<div class="ui red label"><i class="warning sign icon"></i>Unsync</div>
 	{% endif %}
@@ -27,9 +27,12 @@
 
 <div id="pagetab" class="ui secondary pointing menu large">
 	{% if unsync %}
-	<a class="active item" data-tab="unsync">Unsync</a>
+	<a class="active item" data-tab="unsync">Unsync <span class="ui circular tiny label">{{modifications|length}}</span></a>
 	{% endif %}
 	<a class="{% if not unsync %}active {% endif %}item" data-tab="revisions">Revisions</a>
+	{% if auditlog %}
+	<a class="item" data-tab="auditlog">Audit Log</a>
+	{% endif %}
 </div>
 
 {% if unsync %}
@@ -99,6 +102,33 @@
 		</tbody>
 	</table>
 </div>
+
+{% if auditlog %}
+<div class="ui tab" data-tab="auditlog">
+	<table class="ui celled striped sortable table">
+		<thead>
+			<tr>
+				<th>Timestamp</th>
+				<th>Event</th>
+				<th>From</th>
+				<th>To</th>
+				<th>By</th>
+			</tr>
+		</thead>
+		<tbody>
+		{% for audit in auditlog %}
+			<tr>
+				<td class="collapsing">{{audit.datetime.format('Y-m-d H:i:s')}}</td>
+				<td class="collapsing">{{audit.event}}</td>
+				<td>{{audit.from}}</td>
+				<td>{{audit.to}}</td>
+				<td class="collapsing">{{audit.uid}}</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+</div>
+{% endif %}
 
 <div id="dimmer_refresh" class="ui page dimmer">
 	<div class="content">

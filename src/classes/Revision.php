@@ -40,7 +40,9 @@ class Revision
      */
     public function getDate()
     {
-        return $this->commit->getDatetimeCommitter();
+        $date = $this->commit->getDatetimeCommitter();
+        $date->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+        return $date;
     }
 
     /**

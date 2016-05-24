@@ -63,7 +63,7 @@ class Context
      * The branch name to track
      * @var string
      */
-    protected $branch;
+    protected $branch_name;
 
     /**
      * Logger
@@ -84,21 +84,39 @@ class Context
     protected $list_revisions_until = 10;
 
     /**
+     * The HEAD commit
+     * @var \GitElephant\Objects\Commit
+     */
+    private $head = null;
+
+    /**
+     * The remote HEAD commit
+     * @var \GitElephant\Objects\Commit
+     */
+    private $remote_head = null;
+
+    /**
+     * If the repo is dirty
+     * @var boolean
+     */
+    private $is_dirty = null;
+
+    /**
      * Constructor
      * @param string $path The filesystem path pointing to the directory
      * @param string $remote_url The git remote URL
-     * @param string $branch The branch name to track, default to 'master'
+     * @param string $branch_name The branch name to track, default to 'master'
      * @param string $name The user-friendly name of this context (default to the id)
      * @param string $id The id of this context (default to the last part of the path)
      */
-    public function __construct($path, $remote_url, $branch = 'master',
+    public function __construct($path, $remote_url, $branch_name = 'master',
                                 $remote_name = 'origin', $name = null,
                                 $id = null)
     {
         $this->path        = \realpath($path);
         $this->remote_url  = $remote_url;
         $this->remote_name = $remote_name;
-        $this->branch      = $branch;
+        $this->branch_name = $branch_name;
         if ($id) {
             $this->id = \preg_replace('/[^a-zA-Z0-9\s]/', '-', $id);
         } else {
@@ -139,9 +157,9 @@ class Context
      * Get branch name
      * @return string
      */
-    public function getBranch()
+    public function getBranchName()
     {
-        return $this->branch;
+        return $this->branch_name;
     }
 
     /**
@@ -199,9 +217,9 @@ class Context
      * Get remote branch name
      * @return string
      */
-    public function getRemoteBranch()
+    public function getRemoteBranchName()
     {
-        return $this->remote_name.'/'.$this->branch;
+        return $this->remote_name.'/'.$this->branch_name;
     }
 
     /**
@@ -228,8 +246,8 @@ class Context
                 $repo->fetch($this->remote_name, null, false);
                 $repo->fetch($this->remote_name, null, true);
                 $repo->stage();
-                $repo->createBranch($this->branch, $this->getRemoteBranch());
-                $this->checkout($this->branch);
+                $repo->createBranch($this->branch_name, $this->getRemoteBranchName());
+                $this->checkout($this->branch_name);
             } catch (\Exception $e2) {
                 $fs = new \Symfony\Component\Filesystem\Filesystem();
                 $fs->remove(realpath($this->path.'/.git/'));
@@ -245,7 +263,10 @@ class Context
      */
     public function isDirty()
     {
-        return $this->getRepo()->isDirty();
+        if (is_null($this->is_dirty)) {
+            $this->is_dirty = $this->getRepo()->isDirty();
+        }
+        return $this->is_dirty;
     }
 
     /**
@@ -255,8 +276,10 @@ class Context
     public function isLatest()
     {
         $repo   = $this->getRepo();
-        $branch = $repo->getBranch($this->branch);
-        return $branch->getCurrent() && $this->getHead()->getSha() == $repo->getCommit($this->getRemoteBranch())->getSha();
+        $branch = $repo->getBranch($this->branch_name);
+        $head   = $this->getHead();
+        return $branch->getCurrent() && $head->getSha() == $branch->getSha() && $head->getDatetimeCommitter()
+            >= $this->getRemoteHead()->getDatetimeCommitter();
     }
 
     /**
@@ -300,13 +323,13 @@ class Context
 
         $repo   = $this->getRepo();
         $refSha = $repo->getCommit($ref)->getSha();
-        if ($refSha == $repo->getCommit($this->branch)->getSha()) {
+        if ($refSha == $repo->getCommit($this->branch_name)->getSha()) {
             // checkout branch name to prevent detached head
-            $repo->checkout($this->branch);
-        } elseif ($refSha == $repo->getCommit($this->getRemoteBranch())->getSha()) {
+            $repo->checkout($this->branch_name);
+        } elseif ($refSha == $this->getRemoteHead()->getSha()) {
             // merge fast-forward
-            $repo->checkout($this->branch)->merge(new RemoteBranch($repo,
-                $this->remote_name, $this->branch), null, 'ff-only');
+            $repo->checkout($this->branch_name)->merge(new RemoteBranch($repo,
+                $this->remote_name, $this->branch_name), null, 'ff-only');
         } else {
             // to avoid detached head, create/re-create branch when checkout a commit
             $repo->checkout($ref);
@@ -337,7 +360,7 @@ class Context
     {
         $repo = $this->getRepo();
         // reset any changes
-        if ($repo->isDirty()) {
+        if ($this->isDirty()) {
             $repo->reset('HEAD', 'hard');
             $repo->clean(true);
         }
@@ -349,7 +372,22 @@ class Context
      */
     public function getHead()
     {
-        return $this->getRepo()->getCommit('HEAD');
+        if (!$this->head) {
+            $this->head = $this->getRepo()->getCommit('HEAD');
+        }
+        return $this->head;
+    }
+
+    /**
+     * Get the remote HEAD commit
+     * @return \GitElephant\Objects\Commit
+     */
+    public function getRemoteHead()
+    {
+        if (!$this->remote_head) {
+            $this->remote_head = $this->getRepo()->getCommit($this->getRemoteBranchName());
+        }
+        return $this->remote_head;
     }
 
     /**
@@ -376,7 +414,7 @@ class Context
         }
         $revisions = array();
         $continue  = true;
-        foreach ($repo->getLog($this->getRemoteBranch(), null, $limit) as $commit) {
+        foreach ($repo->getLog($this->getRemoteBranchName(), null, $limit) as $commit) {
             if ($continue) {
                 $rev = new Revision($commit);
                 $sha = $commit->getSHA();

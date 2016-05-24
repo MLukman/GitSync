@@ -16,7 +16,7 @@ class Controller
     public $context        = null;
     protected $breadcrumbs = array();
 
-    public function __construct(\Silex\Application $app)
+    public function __construct(\GitSync\Application $app)
     {
         $this->app = $app;
         //$this->page_title = \GitSync\Config::$default_page_title;

@@ -17,7 +17,7 @@
 	<div class="ui description">
 		<p>{{context.getPath}}</p>
 		<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
-		<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranch()}}</div>
+		<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranchName()}}</div>
 	</div>
 	{% if not context.isInitialized() %}
 	<div class="ui red top right attached label"><i class="warning sign icon"></i>Not a Git repo</div>

@@ -17,6 +17,7 @@
 		"symfony/twig-bridge": "^3.0",
 		"cypresslab/gitelephant": "1.*",
 		"monolog/monolog": "1.*",
+		"symfony/serializer": "^3.0",
 		"symfony/security": "^3.0",
 		"symfony/ldap": "^3.0"
 	},
