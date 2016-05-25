@@ -46,7 +46,7 @@ class Config
      * Log files directory
      * @var string
      */
-    protected $logdir = GITSYNC_LIB_DIR.'/logs';
+    protected $logdir = GITSYNC_ROOT_DIR.'/logs';
 
     /**
      * Add context

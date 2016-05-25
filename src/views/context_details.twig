@@ -120,8 +120,8 @@
 			<tr>
 				<td class="collapsing">{{audit.datetime.format('Y-m-d H:i:s')}}</td>
 				<td class="collapsing">{{audit.event}}</td>
-				<td>{{audit.from}}</td>
-				<td>{{audit.to}}</td>
+				<td{% if audit.from == audit.to %} colspan="2"{% endif %}>{{audit.from}}</td>
+				{% if audit.from != audit.to %}<td>{{audit.to}}</td>{% endif %}
 				<td class="collapsing">{{audit.uid}}</td>
 			</tr>
 		{% endfor %}

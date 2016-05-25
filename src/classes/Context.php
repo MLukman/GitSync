@@ -4,8 +4,7 @@ namespace GitSync;
 
 include_once __DIR__.'/../constants.php';
 
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler as StreamLogger;
+use GitElephant\Objects\Commit;
 
 /**
  * A Context represents a directory in the server's filesystem that will be
@@ -66,16 +65,10 @@ class Context
     protected $branch_name;
 
     /**
-     * Logger
-     * @var \Monolog\Logger
-     */
-    protected $logger;
-
-    /**
      * Log files directory
      * @var string
      */
-    protected $logdir = GITSYNC_LIB_DIR.'/logs';
+    protected $logdir = null;
 
     /**
      * Criteria to list revisions. If integer then limit by count, otherwise list revisions until a tag with same value is found.
@@ -246,7 +239,8 @@ class Context
                 $repo->fetch($this->remote_name, null, false);
                 $repo->fetch($this->remote_name, null, true);
                 $repo->stage();
-                $repo->createBranch($this->branch_name, $this->getRemoteBranchName());
+                $repo->createBranch($this->branch_name,
+                    $this->getRemoteBranchName());
                 $this->checkout($this->branch_name);
             } catch (\Exception $e2) {
                 $fs = new \Symfony\Component\Filesystem\Filesystem();
@@ -283,26 +277,6 @@ class Context
     }
 
     /**
-     * Log message
-     * @param int $level One of the constants in \Monolog\Logger class (e.g Logger::INFO)
-     * @param string $message The message
-     * @param array $context Parameters
-     * @param string $uid User id
-     */
-    public function log($level, $message, array $context = array(), $uid = null)
-    {
-        if (!$this->logger) {
-            $this->logger = new Logger('logger',
-                array(
-                new StreamLogger($this->logdir.'/'.$this->logfile)));
-        }
-        if ($uid) {
-            $context['userid'] = $uid;
-        }
-        $this->logger->log($level, $message, $context);
-    }
-
-    /**
      * Fetch latest commits from remote
      */
     public function fetch()
@@ -316,10 +290,13 @@ class Context
      * Checkout specific commit or tag or reference
      * @param string $ref
      */
-    public function checkout($ref, $new_branch = null)
+    public function checkout($ref, $by = null)
     {
         // reset and clean first
         $this->resetAndClean();
+
+        // store old head for auditing
+        $old_head = $this->getHead();
 
         $repo   = $this->getRepo();
         $refSha = $repo->getCommit($ref)->getSha();
@@ -349,8 +326,9 @@ class Context
             // old version of Git <1.8.1.6 don't have --force flag
             $repo->updateSubmodule(true, true);
         }
-        $this->log(Logger::INFO, "Successfully sync directory with a revision",
-            array('ref' => $ref));
+
+        $this->head = $this->getRepo()->getCommit('HEAD');
+        $this->auditEvent($old_head, $this->head, $by);
     }
 
     /**
@@ -481,5 +459,51 @@ class Context
     public function setListRevisionUntil($list_revisions_until)
     {
         $this->list_revisions_until = $list_revisions_until;
+    }
+
+    protected function getAuditFile()
+    {
+        return $this->logdir ? $this->logdir.'/'.$this->id.'.log' : null;
+    }
+
+    protected function auditEvent(Commit $old_head, Commit $new_head, $by)
+    {
+        if (($fn   = $this->getAuditFile()) && ($file = \fopen($fn, 'a'))) {
+            // event name
+            $event = '';
+            if (!$old_head) {
+                $event = 'INIT';
+            } elseif ($new_head->getSha() == $old_head->getSha()) {
+                $event = 'RESET';
+            } elseif ($new_head->getDatetimeAuthor() > $old_head->getDatetimeAuthor()) {
+                $event = 'UPDATE';
+            } else {
+                $event = 'ROLLBACK';
+            }
+            if ($new_head->getSha() == $this->getRepo()->getCommit($this->branch_name)) {
+                $event .= ' TO LATEST';
+            }
+            $audit = new Audit($by ? : '-', $event,
+                $old_head ? sprintf('%s @ %s - %s', $old_head->getSha(true),
+                        $old_head->getDatetimeAuthor()->format('Ymd_Hi'),
+                        $old_head->getMessage()) : null,
+                sprintf('%s @ %s - %s', $new_head->getSha(true),
+                    $new_head->getDatetimeAuthor()->format('Ymd_Hi'),
+                    $new_head->getMessage()));
+            \fwrite($file, $audit->serialize()."\n");
+            \fclose($file);
+        }
+    }
+
+    public function getAuditLog()
+    {
+        $auditlog  = array();
+        if (($auditfile = @\fopen($this->getAuditFile(), 'r'))) {
+            while (($line = fgets($auditfile))) {
+                $auditlog[] = \GitSync\Audit::deserialize($line);
+            }
+            \fclose($auditfile);
+        }
+        return $auditlog;
     }
 }

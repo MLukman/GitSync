@@ -2,7 +2,6 @@
 
 namespace GitSync\Controller;
 
-use GitElephant\Objects\Commit;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -39,14 +38,7 @@ class Context extends \GitSync\Base\Controller
         $repo      = $context->getRepo();
         $head      = $context->getHead();
         $revisions = $context->getLatestRevisions();
-
-        $auditlog  = array();
-        if (($auditfile = @\fopen($this->getAuditFile($context), 'r'))) {
-            while (($line = fgets($auditfile))) {
-                $auditlog[] = \GitSync\Audit::deserialize($line);
-            }
-            \fclose($auditfile);
-        }
+        $auditlog  = $context->getAuditLog();
 
 
         /* If HEAD is not in the list of revisions (most probably due to the directory
@@ -96,10 +88,7 @@ class Context extends \GitSync\Base\Controller
     {
         $context = $this->getContext($ctxid);
         if (($refstr  = $request->request->get('ref'))) {
-            $old_head = $context->getHead();
-            $context->checkout($refstr);
-            $new_head = $context->getHead();
-            $this->auditEvent($context, $old_head, $new_head);
+            $context->checkout($refstr, $this->app->uid());
         }
         return new RedirectResponse($request->request->get('redirect') ? : $this->app->path('context_details',
                     array('ctxid' => $ctxid)));
@@ -146,31 +135,5 @@ class Context extends \GitSync\Base\Controller
             return $contexts;
         }
         return $this->app['config']->getContexts();
-    }
-
-    protected function auditEvent(\GitSync\Context $context, Commit $old_head,
-                                  Commit $new_head)
-    {
-        $event = ($new_head->getSha() == $old_head->getSha() ?
-                'RESET' : ($new_head->getDatetimeAuthor() > $old_head->getDatetimeAuthor()
-                        ? 'UPDATE' : 'ROLLBACK'));
-        if ($new_head->getSha() == $context->getRepo()->getCommit($context->getBranchName())) {
-            $event .= ' TO LATEST';
-        }
-        $audit     = new \GitSync\Audit($this->app->uid(), $event,
-            sprintf('%s @ %s - %s', $old_head->getSha(true),
-                $old_head->getDatetimeAuthor()->format('Ymd_Hi'),
-                $old_head->getMessage()),
-            sprintf('%s @ %s - %s', $new_head->getSha(true),
-                $new_head->getDatetimeAuthor()->format('Ymd_Hi'),
-                $new_head->getMessage()));
-        $auditfile = \fopen($this->getAuditFile($context), 'a');
-        \fwrite($auditfile, $audit->serialize()."\n");
-        \fclose($auditfile);
-    }
-
-    protected function getAuditFile(\GitSync\Context $context)
-    {
-        return $this->app['config']->getLogDir().'/'.$context->getId().'.audit';
     }
 }

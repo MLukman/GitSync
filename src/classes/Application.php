@@ -34,12 +34,17 @@ class Application extends \Silex\Application
         $app           = $this;
         $app['config'] = $config;
 
+        $logdir = $config->getLogDir();
+        if (!is_dir($logdir) && !mkdir($logdir, 0755, true) || !is_writable($logdir)) {
+            throw new \Exception('Log directory cannot be created or is not writable');
+        }
+
         $app->register(new \Silex\Provider\UrlGeneratorServiceProvider());
         $app->register(new \Silex\Provider\ServiceControllerServiceProvider());
         $app->register(new \Silex\Provider\SessionServiceProvider());
         $app->register(new \Silex\Provider\MonologServiceProvider(),
             array(
-            'monolog.logfile' => $config->getLogDir().'/application.log',
+            'monolog.logfile' => $logdir.'/application.log',
             'monolog.level' => \Monolog\Logger::WARNING,
         ));
 

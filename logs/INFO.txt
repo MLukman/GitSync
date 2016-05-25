@@ -1,1 +1,0 @@
-Log files reside here (this file is necessary in order to commit this logs folder into git repo)
