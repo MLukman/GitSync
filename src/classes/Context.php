@@ -332,7 +332,9 @@ class Context
     }
 
     /**
-     * "git reset --hard" and then "git clean -d -f -f"
+     * "git reset --hard",
+     * then "git clean -d -f -f"
+     * and then "git submodule foreach git clean -d -f -f"
      */
     public function resetAndClean()
     {
@@ -340,7 +342,7 @@ class Context
         // reset any changes
         if ($this->isDirty()) {
             $repo->reset('HEAD', 'hard');
-            $repo->clean(true);
+            $repo->clean(true, true);
         }
     }
 

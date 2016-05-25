@@ -29,5 +29,9 @@ trait SerializableTrait
 
     abstract public function serialize();
 
-    abstract static public function deserialize(&$data);
+    static public function deserialize(&$data)
+    {
+        return static::getSerializer()->deserialize($data, \get_called_class(),
+                'json');
+    }
 }

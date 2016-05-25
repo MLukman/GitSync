@@ -45,6 +45,9 @@ class RemoteBranch extends \GitElephant\Objects\Branch
         $command     = BranchCommand::getInstance($this->getRepository())->listBranches(true);
         $outputLines = $this->repository->getCaller()->execute($command)->getOutputLines(true);
         foreach ($outputLines as $outputLine) {
+            if (strpos($outputLine, '->') > 0) {
+                continue;
+            }
             $matches = static::getMatches($outputLine);
             if ($branchName === $matches[1]) {
                 $this->parseOutputLine($outputLine);
