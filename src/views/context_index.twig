@@ -4,7 +4,7 @@
 </h1>
 
 {% if not app.isSecurityEnabled() or app.isGranted('IS_AUTHENTICATED_FULLY') %}
-<form method="get" action="{{app.path('context_refresh_all')}}" onsubmit="$('#refreshbutton').prop('disabled', true); return true;">
+<form method="get" action="{{app.path('context_refresh_all')}}" onsubmit="$('#dimmer_refresh').dimmer('show'); return true;">
 	<input id="refreshbutton" type="submit" class="ui primary tiny button" value="Refresh All Contexts from Remote Repositories" />
 </form>
 {% endif %}
@@ -30,3 +30,15 @@
 	{% endif %}
 </div>
 {% endfor %}
+
+<div id="dimmer_refresh" class="ui page dimmer">
+	<div class="content">
+		<div class="center">
+			<h2 class="ui inverted icon header">
+				<i class="refresh icon"></i>
+				Refresh in progress
+				<div class="sub header">Please wait for a while ...</div>
+			</h2>
+		</div>
+	</div>
+</div>

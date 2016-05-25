@@ -79,7 +79,9 @@ class Context extends \GitSync\Base\Controller
     public function refreshAll(Request $request)
     {
         foreach ($this->app['config']->getContexts() as $context) {
-            $context->fetch();
+            if ($context->isInitialized()) {
+                $context->fetch();
+            }
         }
         return new RedirectResponse($this->app->path('context_index'));
     }
@@ -96,8 +98,7 @@ class Context extends \GitSync\Base\Controller
 
     public function init(Request $request, $ctxid)
     {
-        $context = $this->getContext($ctxid);
-        $context->isInitialized(true);
+        $this->getContext($ctxid)->initialize($this->app->uid());
         return new RedirectResponse($this->app->path('context_details',
                 array('ctxid' => $ctxid)));
     }

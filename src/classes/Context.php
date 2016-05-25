@@ -89,6 +89,12 @@ class Context
     private $remote_head = null;
 
     /**
+     * If the repo is initialized
+     * @var boolean
+     */
+    private $is_initialized = null;
+
+    /**
      * If the repo is dirty
      * @var boolean
      */
@@ -217,38 +223,47 @@ class Context
 
     /**
      * Check if the directory has been initialized as a git repo
-     * @param bool $autoinit True to auto-initialized using remote url
      * @return boolean
      * @throws \Exception
      */
-    public function isInitialized($autoinit = false)
+    public function isInitialized()
     {
-        $repo = $this->getRepo();
-        try {
-            $repo->getIndexStatus();
-        } catch (\Exception $e) {
-            if (!strpos($e->getMessage(), 'Not a git repository')) {
-                throw $e;
-            }
-            if (!$autoinit) {
-                return false;
-            }
-            $repo->init();
+        if (is_null($this->is_initialized)) {
+            $repo = $this->getRepo();
             try {
-                $repo->addRemote($this->remote_name, $this->remote_url);
-                $repo->fetch($this->remote_name, null, false);
-                $repo->fetch($this->remote_name, null, true);
-                $repo->stage();
-                $repo->createBranch($this->branch_name,
-                    $this->getRemoteBranchName());
-                $this->checkout($this->branch_name);
-            } catch (\Exception $e2) {
-                $fs = new \Symfony\Component\Filesystem\Filesystem();
-                $fs->remove(realpath($this->path.'/.git/'));
-                throw $e2;
+                $repo->getIndexStatus();
+                $this->is_initialized = true;
+            } catch (\Exception $e) {
+                if (!strpos($e->getMessage(), 'Not a git repository')) {
+                    throw $e;
+                }
+                $this->is_initialized = false;
             }
         }
-        return true;
+
+        return $this->is_initialized;
+    }
+
+    public function initialize($by = null)
+    {
+        if ($this->isInitialized()) {
+            return;
+        }
+        $repo = $this->getRepo();
+        $repo->init();
+        try {
+            $repo->addRemote($this->remote_name, $this->remote_url);
+            $repo->fetch($this->remote_name, null, false);
+            $repo->fetch($this->remote_name, null, true);
+            $repo->stage();
+            $repo->createBranch($this->branch_name, $this->getRemoteBranchName());
+            $this->checkout($this->branch_name, $by);
+        } catch (\Exception $e2) {
+            $fs = new \Symfony\Component\Filesystem\Filesystem();
+            $fs->remove(realpath($this->path.'/.git/'));
+            throw $e2;
+        }
+        $this->is_initialized = true;
     }
 
     /**
@@ -257,7 +272,9 @@ class Context
      */
     public function isDirty()
     {
-        if (is_null($this->is_dirty)) {
+        if (!$this->isInitialized()) {
+            return false;
+        } elseif (is_null($this->is_dirty)) {
             $this->is_dirty = $this->getRepo()->isDirty();
         }
         return $this->is_dirty;
@@ -269,6 +286,9 @@ class Context
      */
     public function isLatest()
     {
+        if (!$this->isInitialized()) {
+            return true;
+        }
         $repo   = $this->getRepo();
         $branch = $repo->getBranch($this->branch_name);
         $head   = $this->getHead();
@@ -328,7 +348,7 @@ class Context
         }
 
         $this->head = $this->getRepo()->getCommit('HEAD');
-        $this->auditEvent($old_head, $this->head, $by);
+        $this->auditEvent($this->head, $old_head, $by);
     }
 
     /**
@@ -352,7 +372,7 @@ class Context
      */
     public function getHead()
     {
-        if (!$this->head) {
+        if (!$this->head && $this->isInitialized()) {
             $this->head = $this->getRepo()->getCommit('HEAD');
         }
         return $this->head;
@@ -468,7 +488,8 @@ class Context
         return $this->logdir ? $this->logdir.'/'.$this->id.'.log' : null;
     }
 
-    protected function auditEvent(Commit $old_head, Commit $new_head, $by)
+    protected function auditEvent(Commit $new_head, Commit $old_head = null,
+                                  $by = null)
     {
         if (($fn   = $this->getAuditFile()) && ($file = \fopen($fn, 'a'))) {
             // event name
