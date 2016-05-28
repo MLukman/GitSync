@@ -16,9 +16,21 @@ class Repository extends \GitElephant\Repository
         return $this;
     }
 
-    public function clean()
+    public function clean($double_force = false, $clean_submodule = false)
     {
-        $this->getCaller()->execute(Command\CleanCommand::getInstance($this)->clean(),
+        $clean_cmd = Command\CleanCommand::getInstance($this)->clean($double_force);
+        $this->getCaller()->execute($clean_cmd, true, null, array(0, 1));
+
+        if ($clean_submodule) {
+            $this->foreachSubmodule($clean_cmd);
+        }
+
+        return $this;
+    }
+
+    public function foreachSubmodule($cmd)
+    {
+        $this->getCaller()->execute(Command\SubmoduleCommand::getInstance($this)->foreachCmd($cmd),
             true, null, array(0, 1));
 
         return $this;

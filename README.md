@@ -1,4 +1,7 @@
 ![GitSync logo](ui/gitsync.png)
+
+[![Packagist Version](https://img.shields.io/packagist/v/mlukman/gitsync.svg)](https://packagist.org/packages/mlukman/gitsync) [![Packagist License](https://img.shields.io/packagist/l/mlukman/gitsync.svg)](https://packagist.org/packages/mlukman/gitsync) [![GitHub issues](https://img.shields.io/github/issues/MLukman/GitSync.svg?maxAge=2592000)](https://github.com/MLukman/GitSync)
+
 # Introduction
 
 GitSync is a PHP tool that will sync any directory on your server with a Git repository. It provides GUI for server admins to synchronize a directory with any commit (i.e. revision) of the source code with a click of a button.
@@ -58,6 +61,47 @@ Finally, instantiate a `\GitSync\Application` object while passing the `$config`
 	$app->run();
 
 That's the basic working setup.
+
+## Secure Setup
+
+Of course, GitSync without security is like begging to be hacked, so GitSync comes with a security module.
+
+As of writing, GitSync comes with the following security providers:
+
+1. **SimpleSecurityProvider**: authenticate using simple username & password combinations
+2. **LdapSecurityProvider**: authenticate using LDAP bind mechanism
+
+### SimpleSecurityProvider
+
+Here is how to use SimpleSecurityProvider:
+
+	// create a new security provider
+	$security = new \GitSync\Security\SimpleSecurityProvider();
+
+	// user with ROLE_ADMIN implicitly gets access to all contexts
+	$security->addUser('admin', 'admin', array('ROLE_ADMIN'));
+
+	// user with ROLE_USER needs to be given explicit access to specific contexts
+	$security->addUser('user01', 'userpassword', array('ROLE_USER'));
+
+	// Add user01 to the list of user id allowed access
+	$context->addAllowedUid('user01');
+
+	// add the security provider to the application
+	$app->addSecurityProvider($security, 'simple');
+
+### LdapSecurityProvider
+
+Using LdapSecurityProvider is similar but you need to provide the host, port and distinguised name (DN) string:
+
+	// create a new security provider
+	$security = new \GitSync\Security\LdapSecurityProvider("ldap.mycompany.com", 389, "uid={username},ou=People,o=MyCompany");
+
+	// No password needed when adding user to LdapSecurityProvider 
+	$security->addUser('JohnDoe', array('ROLE_ADMIN'));
+
+	// add the security provider to the application
+	$app->addSecurityProvider($security, 'ldap');
 
 ### Powered by:
 

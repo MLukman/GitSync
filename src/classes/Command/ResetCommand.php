@@ -24,8 +24,7 @@ class ResetCommand extends \GitElephant\Command\BaseCommand
         $this->addCommandName(self::GIT_RESET);
 
         // only accept method listed in static $methods array, default to 'mixed'
-        $method_option = (isset(self::$methods[$method]) ? self::$methods[$method]
-                    : self::$methods['mixed']);
+        $method_option = (in_array($method, self::$methods) ? $method : 'mixed');
         $this->addCommandArgument('--'.$method_option);
         $this->addCommandArgument($ref ? : 'HEAD');
 

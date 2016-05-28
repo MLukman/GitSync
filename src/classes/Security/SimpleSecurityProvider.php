@@ -30,9 +30,16 @@ class SimpleSecurityProvider implements SecurityProviderInterface, SimpleAuthent
     }
 
     /**
-     *
-     * @return AuthenticationProviderInterface
+     * Add a user to the list of authenticated users
+     * @param string $userid The user id
+     * @param string $password The user plain password
+     * @param array $role The array of user roles: ROLE_USER, ROLE_ADMIN, ROLE_SUPERADMIN
      */
+    public function addUser($userid, $password, array $role = array('ROLE_USER'))
+    {
+        $this->userProvider->createUser(new User($userid, $password, $role));
+    }
+
     public function getAuthenticationProvider(\Silex\Application $app,
                                               $providerKey)
     {
@@ -41,6 +48,11 @@ class SimpleSecurityProvider implements SecurityProviderInterface, SimpleAuthent
                 $this->userProvider, $providerKey);
         }
         return $this->authenticationProvider;
+    }
+
+    public function getUserProvider()
+    {
+        return $this->userProvider;
     }
 
     public function authenticateToken(TokenInterface $token,
@@ -59,15 +71,5 @@ class SimpleSecurityProvider implements SecurityProviderInterface, SimpleAuthent
     {
         return $token instanceof UsernamePasswordToken && $token->getProviderKey()
             === $providerKey;
-    }
-
-    public function addUser($userid, $password, array $role = array('ROLE_USER'))
-    {
-        $this->userProvider->createUser(new User($userid, $password, $role));
-    }
-
-    public function getUserProvider()
-    {
-        return $this->userProvider;
     }
 }

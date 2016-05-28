@@ -1,0 +1,44 @@
+<h1 class="ui header">
+	<i class="database icon"></i>
+	<div class="content">All contexts</div>
+</h1>
+
+{% if not app.isSecurityEnabled() or app.isGranted('IS_AUTHENTICATED_FULLY') %}
+<form method="get" action="{{app.path('context_refresh_all')}}" onsubmit="$('#dimmer_refresh').dimmer('show'); return true;">
+	<input id="refreshbutton" type="submit" class="ui primary tiny button" value="Refresh All Contexts from Remote Repositories" />
+</form>
+{% endif %}
+
+{% for id,context in contexts %}
+<div class="ui item stacked segment">
+	<h2 class="header">
+		<a href="{{app.path('context_details', {'ctxid': id})}}">{{context.getName()}}</a>
+	</h2>
+	<div class="ui description">
+		<p>{{context.getPath}}</p>
+		<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
+		<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranchName()}}</div>
+	</div>
+	{% if not context.isInitialized() %}
+	<div class="ui red top right attached label"><i class="warning sign icon"></i>Not a Git repo</div>
+	{% elseif context.isDirty() %}
+	<div class="ui red top right attached label"><i class="warning sign icon"></i>Unsync</div>
+	{% elseif not context.isLatest() %}
+	<div class="ui orange top right attached label"><i class="warning sign icon"></i>Outdated</div>
+	{% else %}
+	<div class="ui green top right attached label"><i class="check circle icon"></i>OK</div>
+	{% endif %}
+</div>
+{% endfor %}
+
+<div id="dimmer_refresh" class="ui page dimmer">
+	<div class="content">
+		<div class="center">
+			<h2 class="ui inverted icon header">
+				<i class="refresh icon"></i>
+				Refresh in progress
+				<div class="sub header">Please wait for a while ...</div>
+			</h2>
+		</div>
+	</div>
+</div>

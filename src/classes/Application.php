@@ -2,29 +2,28 @@
 
 namespace GitSync;
 
-// Directory where index.php is running from
-define('LIB_DIR', realpath(__DIR__.'/../../'));
-
-// Directory where index.php is running from
-define('ROOT_DIR', dirname($_SERVER["SCRIPT_FILENAME"]));
-
-define('ROOT_PATH', 'context_index');
+include_once __DIR__.'/../constants.php';
 
 class Application extends \Silex\Application
 {
 
     use \Silex\Application\UrlGeneratorTrait;
-    protected $config    = null;
+    /**
+     * The configuration
+     * @var \GitSync\Config
+     */
+    protected $config = null;
+
+    /**
+     * The firewall settings for Symfony security module
+     * @var array
+     */
     protected $firewalls = array(
         'login' => array(
-            'pattern' => '^/auth/login$',
+            'pattern' => '^/login$',
         ),
         'secured' => array(
             'pattern' => '^/',
-            'form' => array(
-                'login_path' => '/auth/login',
-                'check_path' => '/admin/login_check'
-            ),
             'logout' => true,
     ));
 
@@ -35,31 +34,40 @@ class Application extends \Silex\Application
         $app           = $this;
         $app['config'] = $config;
 
+        $logdir = $config->getLogDir();
+        if (!is_dir($logdir) && !mkdir($logdir, 0755, true) || !is_writable($logdir)) {
+            throw new \Exception('Log directory cannot be created or is not writable');
+        }
+
         $app->register(new \Silex\Provider\UrlGeneratorServiceProvider());
         $app->register(new \Silex\Provider\ServiceControllerServiceProvider());
         $app->register(new \Silex\Provider\SessionServiceProvider());
         $app->register(new \Silex\Provider\MonologServiceProvider(),
             array(
-            'monolog.logfile' => LIB_DIR.'/logs/application.log',
+            'monolog.logfile' => $logdir.'/application.log',
             'monolog.level' => \Monolog\Logger::WARNING,
         ));
 
         /* Twig Template Engine */
         $app->register(new \Silex\Provider\TwigServiceProvider(),
             array(
-            'twig.path' => __DIR__."/../views",
+            'twig.path' => realpath($config->viewsDir),
         ));
 
         /* Root controller */
         $app->mount('/', new \GitSync\Provider\RootControllerProvider());
 
         /* if .htaccess file is missing */
-        if (!file_exists(ROOT_DIR.'/.htaccess') && file_exists(LIB_DIR.'/.htaccess')) {
-            copy(LIB_DIR.'/.htaccess', ROOT_DIR.'/.htaccess');
+        if (!file_exists(GITSYNC_ROOT_DIR.'/.htaccess') && file_exists(GITSYNC_LIB_DIR.'/.htaccess')) {
+            copy(GITSYNC_LIB_DIR.'/.htaccess', GITSYNC_ROOT_DIR.'/.htaccess');
         }
-
     }
 
+    /**
+     * Add & activate a security provider
+     * @param \GitSync\Security\SecurityProviderInterface $provider
+     * @param string $id
+     */
     public function addSecurityProvider(Security\SecurityProviderInterface $provider,
                                         $id = null)
     {
@@ -70,13 +78,23 @@ class Application extends \Silex\Application
             $app->register(new \Silex\Provider\SecurityServiceProvider(),
                 array('security.firewalls' => array()));
 
-            /* Auth controllers */
-            $app->mount('/auth', new \GitSync\Provider\AuthControllerProvider());
+            /* Auth controller */
+            $app['auth.controller'] = $app->share(function() use ($app) {
+                return new \GitSync\Controller\Auth($app);
+            });
+
+            $app->get('/login', 'auth.controller:login')->bind('login');
         }
 
         $id = $id ? : 'secure'.rand(100, 999);
 
         $app['security.authentication_listener.factory.'.$id] = $app->protect(function ($name, $options) use ($app, $id, $provider) {
+            static $userProviders = array();
+
+            if (!isset($userProviders[$name])) {
+                $userProviders[$name] = array();
+            }
+            $userProviders[$name][] = $provider->getUserProvider();
 
             $app['security.authentication_provider.'.$name.'.'.$id] = $app->share(function () use ($app, $provider, $name) {
                 return $provider->getAuthenticationProvider($app, $name);
@@ -85,11 +103,13 @@ class Application extends \Silex\Application
             $app['security.authentication_listener.'.$name.'.'.$id] = $app['security.authentication_listener.form._proto']($name,
                 $options);
 
-            $app['security.entry_point.'.$name.'.form'] = $app['security.entry_point.form._proto']($name,
-                $options);
+            if (!isset($app['security.entry_point.'.$name.'.form'])) {
+                $app['security.entry_point.'.$name.'.form'] = $app['security.entry_point.form._proto']($name,
+                    $options);
+            }
 
             $app['security.context_listener.'.$name] = $app['security.context_listener._proto']($name,
-                array($provider->getUserProvider()));
+                $userProviders[$name]);
 
             return array(
                 'security.authentication_provider.'.$name.'.'.$id, // the authentication provider id
@@ -100,28 +120,45 @@ class Application extends \Silex\Application
         });
 
         $this->firewalls['secured'][$id] = array(
-            'login_path' => '/auth/login',
+            'login_path' => '/login',
             'check_path' => '/admin/login_check'
         );
 
         $app['security.firewalls'] = $this->firewalls;
     }
 
+    /**
+     * Check if security is enabled
+     * @return boolean
+     */
     public function isSecurityEnabled()
     {
         return isset($this['user']);
     }
 
+    /**
+     * Get the logged in user, null if security is not enabled
+     * @return \Symfony\Component\Security\Core\User\UserInterface
+     */
     public function user()
     {
         return (isset($this['user']) ? $this['user'] : null);
     }
 
+    /**
+     * Get the user id, null if security is not enabled
+     * @return string
+     */
     public function uid()
     {
         return (($user = $this->user()) ? $user->getUsername() : null);
     }
 
+    /**
+     * Check if the currently logged in user has the needed role
+     * @param string $role The needed role
+     * @return boolean
+     */
     public function isGranted($role)
     {
         return ($this->user() && $this['security.authorization_checker']->isGranted($role));

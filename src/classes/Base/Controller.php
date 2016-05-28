@@ -16,13 +16,13 @@ class Controller
     public $context        = null;
     protected $breadcrumbs = array();
 
-    public function __construct(\Silex\Application $app)
+    public function __construct(\GitSync\Application $app)
     {
         $this->app = $app;
         //$this->page_title = \GitSync\Config::$default_page_title;
         $subpath   = str_replace("\\", "/",
-            substr(LIB_DIR, strlen(ROOT_DIR) + 1));
-        $basePath  = $app->path(ROOT_PATH);
+            substr(GITSYNC_LIB_DIR, strlen(GITSYNC_ROOT_DIR) + 1));
+        $basePath  = $app->path(GITSYNC_ROOT_ROUTE);
 
         $this->context              = new \stdClass();
         $this->context->basePath    = $basePath;
