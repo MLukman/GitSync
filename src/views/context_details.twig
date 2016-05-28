@@ -12,7 +12,7 @@
 	<div class="content">{{context.getName()}} [{{context.getPath()}}]</div>
 </h1>
 
-<div>
+<form method="get" action="{{app.path('context_refresh', {'ctxid': ctxid})}}" onsubmit="$('#dimmer_refresh').dimmer('show'); return true;">
 	<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
 	<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranchName()}}</div>
 	{% if context.isDirty() %}
@@ -21,13 +21,16 @@
 	{% if not context.isLatest() %}
 	<div class="ui orange label"><i class="warning sign icon"></i>Outdated</div>
 	{% endif %}
-</div>
+	<input type="hidden" name="redirect" value="{{app.path('context_details', {'ctxid': ctxid})}}#/revisions" />
+	<input id="refreshbutton" type="submit" class="ui primary tiny button right floated" value="Refresh from Remote Repositories" />
+</form>
 
 {% set unsync = (modifications|length > 0) %}
 
-<div id="pagetab" class="ui secondary pointing menu large">
+<div class="ui secondary segment">
+<div id="pagetab" class="ui top attached tabular large menu">
 	{% if unsync %}
-	<a class="active item" data-tab="unsync">Unsync <span class="ui circular tiny label">{{modifications|length}}</span></a>
+	<a class="active item" data-tab="unsync">Unsync <span class="ui red circular tiny label">{{modifications|length}}</span></a>
 	{% endif %}
 	<a class="{% if not unsync %}active {% endif %}item" data-tab="revisions">Revisions</a>
 	{% if auditlog %}
@@ -36,9 +39,9 @@
 </div>
 
 {% if unsync %}
-<div class="ui active tab" data-tab="unsync">
-	<p>The following <strong>{{modifications|length}}</strong> modifications have been found:</p>
-	<table class="ui celled striped compact inverted red table">
+<div class="ui bottom attached active tab segment" data-tab="unsync">
+	<p>The following direct modifications to files have been found:</p>
+	<table class="ui celled striped compact red table">
 		<thead>
 			<tr>
 				<th>Status</th>
@@ -60,12 +63,9 @@
 </div>
 {% endif %}
 
-<div class="ui {% if not unsync %}active{% endif %} tab" data-tab="revisions">
-	<form method="get" action="{{app.path('context_refresh', {'ctxid': ctxid})}}" onsubmit="$('#dimmer_refresh').dimmer('show'); return true;">
-		<input type="hidden" name="redirect" value="{{app.path('context_details', {'ctxid': ctxid})}}#/revisions" />
-		<input id="refreshbutton" type="submit" class="ui primary tiny button" value="Refresh from Remote Repositories" />
-	</form>
-	<table class="ui celled striped sortable table">
+<div class="ui bottom attached tab segment{% if not unsync %} active{% endif %}" data-tab="revisions">
+	<p>Choose from the list of revisions below to sync with:</p>
+	<table class="ui celled striped sortable blue table">
 		<thead>
 			<tr>
 				<th>Timestamp</th>
@@ -104,8 +104,9 @@
 </div>
 
 {% if auditlog %}
-<div class="ui tab" data-tab="auditlog">
-	<table class="ui celled striped sortable table">
+<div class="ui bottom attached tab segment" data-tab="auditlog">
+	<p>The following events have occurred via GitSync:</p>
+	<table class="ui celled striped sortable orange table">
 		<thead>
 			<tr>
 				<th>Timestamp</th>
@@ -129,6 +130,7 @@
 	</table>
 </div>
 {% endif %}
+</div>
 
 <div id="dimmer_refresh" class="ui page dimmer">
 	<div class="content">

@@ -173,6 +173,7 @@ class Context
             if (strncasecmp(PHP_OS, 'WIN', 3) == 0) {
                 $gitbin = '"C:\Program Files\Git\bin\git.exe"';
             }
+
             $this->repo = new \GitSync\Repository($this->path,
                 new \GitElephant\GitBinary($gitbin)
             );
@@ -228,19 +229,7 @@ class Context
      */
     public function isInitialized()
     {
-        if (is_null($this->is_initialized)) {
-            $repo = $this->getRepo();
-            try {
-                $repo->getIndexStatus();
-                $this->is_initialized = true;
-            } catch (\Exception $e) {
-                if (!strpos($e->getMessage(), 'Not a git repository')) {
-                    throw $e;
-                }
-                $this->is_initialized = false;
-            }
-        }
-
+        $this->checkStatus();
         return $this->is_initialized;
     }
 
@@ -272,12 +261,24 @@ class Context
      */
     public function isDirty()
     {
-        if (!$this->isInitialized()) {
-            return false;
-        } elseif (is_null($this->is_dirty)) {
-            $this->is_dirty = $this->getRepo()->isDirty();
-        }
+        $this->checkStatus();
         return $this->is_dirty;
+    }
+
+    protected function checkStatus()
+    {
+        if (is_null($this->is_dirty)) {
+            try {
+                $this->is_dirty       = $this->getRepo()->isDirty();
+                $this->is_initialized = true;
+            } catch (\Exception $e) {
+                if (!strpos($e->getMessage(), 'Not a git repository')) {
+                    throw $e;
+                }
+                $this->is_dirty       = false;
+                $this->is_initialized = false;
+            }
+        }
     }
 
     /**

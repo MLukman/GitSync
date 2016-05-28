@@ -27,9 +27,9 @@
 	<a href="{{basePath}}"><img src="{{baseUIPath}}ui/gitsync-small.png" /></a>
 
 	{% if app.isGranted('IS_AUTHENTICATED_FULLY') %}
-		<a href="{{path('logout')}}" class="ui tiny button right floated">Logout</a>
+		<a href="{{path('logout')}}" class="ui tiny button right floated"><i class="ui sign out icon"></i>Logout</a>
 	{% elseif app.isSecurityEnabled() %}
-		<a href="{{path('login')}}" class="ui tiny button right floated">Login</a>
+		<a href="{{path('login')}}" class="ui tiny button right floated"><i class="ui sign in icon"></i> Login</a>
 	{% else %}
 		<div class="ui warning message">
 			<div class="header">
