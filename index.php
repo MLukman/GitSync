@@ -15,23 +15,23 @@ $config->addContext($context);
 // create a new application
 $app = new \GitSync\Application($config);
 
-// create a new security provider
-$security = new GitSync\Security\SimpleSecurityProvider();
+// To add security, instantiate a driver (SimpleDriver used below)
+$driver = new \Securilex\Driver\SimpleDriver();
 
 // user with ROLE_ADMIN implicitly gets access to all contexts
-$security->addUser('admin', 'admin', array('ROLE_ADMIN'));
+$driver->addUser('admin', 'admin', array('ROLE_ADMIN'));
 
 // user with ROLE_USER needs to be given explicit access to specific contexts
-$security->addUser('user01', 'user01', array('ROLE_USER'));
+$driver->addUser('user01', 'user01', array('ROLE_USER'));
 
 // ditto
-$security->addUser('user02', 'user02', array('ROLE_USER'));
+$driver->addUser('user02', 'user02', array('ROLE_USER'));
 
 // Add user01 & user02 to the list of user id allowed access
 $context->addAllowedUid('user01')->addAllowedUid('user02');
 
-// add the security provider to the application
-$app->addSecurityProvider($security, 'simple');
+// Activate security using the driver
+$app->activateSecurity($driver);
 
 // debug mode
 $app['debug'] = true;

@@ -64,44 +64,42 @@ That's the basic working setup.
 
 ## Secure Setup
 
-Of course, GitSync without security is like begging to be hacked, so GitSync comes with a security module.
+Of course, GitSync without security is like begging to be hacked, so GitSync utilizes [Securilex](https://github.com/MLukman/Securilex) security module. Refer Securilex's [README](https://github.com/MLukman/Securilex/blob/master/README.md) for detailed usage of the module.
 
-As of writing, GitSync comes with the following security providers:
+To enable secure mode, you just have to call `\GitSync\Application::activateSecurity` method, passing an instance of `\Securilex\DriverInterface` to the method.
 
-1. **SimpleSecurityProvider**: authenticate using simple username & password combinations
-2. **LdapSecurityProvider**: authenticate using LDAP bind mechanism
+### `\Securilex\Driver\SimpleDriver`
 
-### SimpleSecurityProvider
+	// create a new driver
+    $driver = new \Securilex\Driver\SimpleDriver();
 
-Here is how to use SimpleSecurityProvider:
+    // user with ROLE_ADMIN implicitly gets access to all contexts
+    $driver->addUser('admin', 'admin', array('ROLE_ADMIN'));
 
-	// create a new security provider
-	$security = new \GitSync\Security\SimpleSecurityProvider();
+    // user with ROLE_USER needs to be given explicit access to specific contexts
+    $driver->addUser('user01', 'user01', array('ROLE_USER'));
 
-	// user with ROLE_ADMIN implicitly gets access to all contexts
-	$security->addUser('admin', 'admin', array('ROLE_ADMIN'));
+    // ditto
+    $driver->addUser('user02', 'user02', array('ROLE_USER'));
 
-	// user with ROLE_USER needs to be given explicit access to specific contexts
-	$security->addUser('user01', 'userpassword', array('ROLE_USER'));
+    // Add user01 & user02 to the list of user id allowed access
+    $context->addAllowedUid('user01')->addAllowedUid('user02');
 
-	// Add user01 to the list of user id allowed access
-	$context->addAllowedUid('user01');
+    // Activate security using the driver
+    $app->activateSecurity($driver);
 
-	// add the security provider to the application
-	$app->addSecurityProvider($security, 'simple');
-
-### LdapSecurityProvider
+### `\Securilex\Driver\LdapDriver`
 
 Using LdapSecurityProvider is similar but you need to provide the host, port and distinguised name (DN) string:
 
-	// create a new security provider
-	$security = new \GitSync\Security\LdapSecurityProvider("ldap.mycompany.com", 389, "uid={username},ou=People,o=MyCompany");
+	// create a new driver
+	$driver = new \Securilex\Driver\LdapDriver("ldap.mycompany.com", 389, "uid={username},ou=People,o=MyCompany");
 
 	// No password needed when adding user to LdapSecurityProvider 
-	$security->addUser('JohnDoe', array('ROLE_ADMIN'));
+	$driver->addUser('JohnDoe', array('ROLE_ADMIN'));
 
-	// add the security provider to the application
-	$app->addSecurityProvider($security, 'ldap');
+    // Activate security using the driver
+    $app->activateSecurity($driver);
 
 ### Powered by:
 
