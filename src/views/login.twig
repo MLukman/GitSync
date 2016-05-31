@@ -1,6 +1,6 @@
 <div class="ui center aligned">
 	<div style="margin: 2em 0; width: 40em]">
-		<form action="{{app.path('admin_login_check')}}" method="post">
+		<form action="{{app.path('login')}}/doLogin" method="post">
 			<div class="ui form piled segment">
 				<h2 class="ui header">Please Login To Continue</h2>
 				{% if error %}<div class="ui negative message">{{error}}</div>{% endif %}

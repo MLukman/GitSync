@@ -15,17 +15,16 @@ class Application extends \Silex\Application
     protected $config = null;
 
     /**
-     * The firewall settings for Symfony security module
-     * @var array
+     * The security provider
+     * @var \Securilex\ServiceProvider
      */
-    protected $firewalls = array(
-        'login' => array(
-            'pattern' => '^/login$',
-        ),
-        'secured' => array(
-            'pattern' => '^/',
-            'logout' => true,
-    ));
+    protected $security = null;
+
+    /**
+     * The firewall
+     * @var \Securilex\Firewall
+     */
+    protected $firewall = null;
 
     public function __construct(\GitSync\Config $config)
     {
@@ -64,67 +63,28 @@ class Application extends \Silex\Application
     }
 
     /**
-     * Add & activate a security provider
+     * Add & activate a security
      * @param \GitSync\Security\SecurityProviderInterface $provider
      * @param string $id
      */
-    public function addSecurityProvider(Security\SecurityProviderInterface $provider,
-                                        $id = null)
+    public function activateSecurity(\Securilex\DriverInterface $driver)
     {
-        $app = $this;
-
-        if (!$app->isSecurityEnabled()) {
-            /* Register SecurityServiceProvider */
-            $app->register(new \Silex\Provider\SecurityServiceProvider(),
-                array('security.firewalls' => array()));
+        if (!$this->security) {
+            $this->security = new \Securilex\ServiceProvider();
+            $this->firewall = new \Securilex\Firewall('/', $driver, '/login',
+                '/login/doLogin');
+            $this->security->addFirewall($this->firewall);
+            $this->register($this->security);
 
             /* Auth controller */
-            $app['auth.controller'] = $app->share(function() use ($app) {
-                return new \GitSync\Controller\Auth($app);
+            $this['auth.controller'] = $this->share(function() {
+                return new \GitSync\Controller\Auth($this);
             });
 
-            $app->get('/login', 'auth.controller:login')->bind('login');
+            $this->match('/login', 'auth.controller:login')->bind('login');
+        } else {
+            $this->firewall->addDriver($driver);
         }
-
-        $id = $id ? : 'secure'.rand(100, 999);
-
-        $app['security.authentication_listener.factory.'.$id] = $app->protect(function ($name, $options) use ($app, $id, $provider) {
-            static $userProviders = array();
-
-            if (!isset($userProviders[$name])) {
-                $userProviders[$name] = array();
-            }
-            $userProviders[$name][] = $provider->getUserProvider();
-
-            $app['security.authentication_provider.'.$name.'.'.$id] = $app->share(function () use ($app, $provider, $name) {
-                return $provider->getAuthenticationProvider($app, $name);
-            });
-
-            $app['security.authentication_listener.'.$name.'.'.$id] = $app['security.authentication_listener.form._proto']($name,
-                $options);
-
-            if (!isset($app['security.entry_point.'.$name.'.form'])) {
-                $app['security.entry_point.'.$name.'.form'] = $app['security.entry_point.form._proto']($name,
-                    $options);
-            }
-
-            $app['security.context_listener.'.$name] = $app['security.context_listener._proto']($name,
-                $userProviders[$name]);
-
-            return array(
-                'security.authentication_provider.'.$name.'.'.$id, // the authentication provider id
-                'security.authentication_listener.'.$name.'.'.$id, // the authentication listener id
-                'security.entry_point.'.$name.'.form', // the entry point id
-                'pre_auth' // the position of the listener in the stack
-            );
-        });
-
-        $this->firewalls['secured'][$id] = array(
-            'login_path' => '/login',
-            'check_path' => '/admin/login_check'
-        );
-
-        $app['security.firewalls'] = $this->firewalls;
     }
 
     /**
