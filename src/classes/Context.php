@@ -10,10 +10,13 @@ use GitElephant\Objects\Commit;
  * A Context represents a directory in the server's filesystem that will be
  * managed by a specific list of users via GitSync.
  */
-class Context
+class Context implements \Securilex\Authorization\SecuredAccessInterface
 {
 
-    use \GitSync\Security\SecuredAccessTrait;
+    use \Securilex\Authorization\SecuredAccessTrait;
+    /**
+     * The temporary branch name to create if user sync with a commit that is not a head of any branch
+     */
     const GS_BRANCH = 'gitsync';
 
     /**

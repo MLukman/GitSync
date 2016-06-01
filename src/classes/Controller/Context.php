@@ -114,27 +114,20 @@ class Context extends \GitSync\Base\Controller
         if (!$context) {
             throw new NotFoundHttpException();
         }
-        if ($this->app->isSecurityEnabled() && !$skip_security) {
-            if (!$this->app->isGranted('ROLE_ADMIN') && !$context->isUidAllowed($this->app->uid())) {
-                throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException();
-            }
+        if (!$skip_security && !$context->checkAccess($this->app)) {
+            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException();
         }
         return $context;
     }
 
     protected function getAllContexts()
     {
-        if ($this->app->isSecurityEnabled() && !$this->app->isGranted('ROLE_ADMIN')) {
-            $uid = $this->app->uid();
-
-            $contexts = array();
-            foreach ($this->app['config']->getContexts() as $context) {
-                if ($context->isUidAllowed($uid)) {
-                    $contexts[] = $context;
-                }
+        $contexts = array();
+        foreach ($this->app['config']->getContexts() as $context) {
+            if ($context->checkAccess($this->app)) {
+                $contexts[$context->getId()] = $context;
             }
-            return $contexts;
         }
-        return $this->app['config']->getContexts();
+        return $contexts;
     }
 }

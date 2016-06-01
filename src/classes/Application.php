@@ -4,6 +4,8 @@ namespace GitSync;
 
 include_once __DIR__.'/../constants.php';
 
+use Symfony\Component\HttpFoundation\RedirectResponse;
+
 class Application extends \Silex\Application
 {
 
@@ -71,7 +73,7 @@ class Application extends \Silex\Application
     {
         if (!$this->security) {
             $this->security = new \Securilex\ServiceProvider();
-            $this->firewall = new \Securilex\Firewall('/', $driver, '/login',
+            $this->firewall = new \Securilex\Firewall('/', $driver, '/login/',
                 '/login/doLogin');
             $this->security->addFirewall($this->firewall);
             $this->register($this->security);
@@ -81,7 +83,11 @@ class Application extends \Silex\Application
                 return new \GitSync\Controller\Auth($this);
             });
 
-            $this->match('/login', 'auth.controller:login')->bind('login');
+            /* Add routes */
+            $this->match('/login/', 'auth.controller:login')->bind('login');
+            $this->match('/login/doLogin')->run(function() {
+                new RedirectResponse($this->path('context_index'));
+            })->bind('doLogin');
         } else {
             $this->firewall->addDriver($driver);
         }
