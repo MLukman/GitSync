@@ -18,7 +18,7 @@
 		"cypresslab/gitelephant": "1.*",
 		"monolog/monolog": "1.*",
 		"symfony/serializer": "^3.0",
-		"mlukman/securilex": "0.*"
+		"mlukman/securilex": "1.*"
 	},
 	"autoload": {
 		"psr-4": {

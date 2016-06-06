@@ -15,23 +15,27 @@ $config->addContext($context);
 // create a new application
 $app = new \GitSync\Application($config);
 
-// To add security, instantiate a driver (SimpleDriver used below)
-$driver = new \Securilex\Driver\SimpleDriver();
+// To add security, first instantiate a user provider which provides the list of users to authenticate from
+// The simplest is InMemoryUserProvider which we can use to hard-code the users
+$userProvider = new \Symfony\Component\Security\Core\User\InMemoryUserProvider();
 
-// user with ROLE_ADMIN implicitly gets access to all contexts
-$driver->addUser('admin', 'admin', array('ROLE_ADMIN'));
+// Create users
+// ROLE_ADMIN can access all contexts
+$userProvider->createUser(new \Symfony\Component\Security\Core\User\User('admin',
+    'admin123', array('ROLE_ADMIN')));
 
-// user with ROLE_USER needs to be given explicit access to specific contexts
-$driver->addUser('user01', 'user01', array('ROLE_USER'));
+// Or for fine-grained access control, give it ROLE_USER
+$userProvider->createUser(new \Symfony\Component\Security\Core\User\User('user01',
+    'user01', array('ROLE_USER')));
+// and specifically allow it to access each context
+$context->addAllowedUsername('user01');
 
-// ditto
-$driver->addUser('user02', 'user02', array('ROLE_USER'));
+// Then instantiate an authentication factory that can authenticate the users
+// For plain text passwords, you can use
+$authFactory = new \Securilex\Authentication\Factory\PlaintextPasswordAuthenticationFactory();
 
-// Add user01 & user02 to the list of user id allowed access
-$context->addAllowedUid('user01')->addAllowedUid('user02');
-
-// Activate security using the driver
-$app->activateSecurity($driver);
+// Finally, activate security by passing both the authentication factory and user provider
+$app->activateSecurity($authFactory, $userProvider);
 
 // debug mode
 $app['debug'] = true;

@@ -4,31 +4,48 @@ namespace GitSync;
 
 include_once __DIR__.'/../constants.php';
 
-use Symfony\Component\HttpFoundation\RedirectResponse;
+use GitSync\Controller\Auth;
+use GitSync\Provider\RootControllerProvider;
+use Monolog\Logger;
+use Securilex\Authentication\AuthenticationFactoryInterface;
+use Securilex\Authorization\SecuredAccessVoter;
+use Securilex\Firewall;
+use Securilex\ServiceProvider;
+use Silex\Provider\MonologServiceProvider;
+use Silex\Provider\ServiceControllerServiceProvider;
+use Silex\Provider\SessionServiceProvider;
+use Silex\Provider\TwigServiceProvider;
+use Silex\Provider\UrlGeneratorServiceProvider;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\UserProviderInterface;
 
+/**
+ * The main Application class for GitSync. This class is the entrypoint for all
+ * request handlings within GitSync.
+ */
 class Application extends \Silex\Application
 {
 
     use \Silex\Application\UrlGeneratorTrait;
     /**
      * The configuration
-     * @var \GitSync\Config
+     * @var Config
      */
     protected $config = null;
 
     /**
      * The security provider
-     * @var \Securilex\ServiceProvider
+     * @var ServiceProvider
      */
     protected $security = null;
 
     /**
      * The firewall
-     * @var \Securilex\Firewall
+     * @var Firewall
      */
     protected $firewall = null;
 
-    public function __construct(\GitSync\Config $config)
+    public function __construct(Config $config)
     {
         parent::__construct();
 
@@ -40,23 +57,23 @@ class Application extends \Silex\Application
             throw new \Exception('Log directory cannot be created or is not writable');
         }
 
-        $app->register(new \Silex\Provider\UrlGeneratorServiceProvider());
-        $app->register(new \Silex\Provider\ServiceControllerServiceProvider());
-        $app->register(new \Silex\Provider\SessionServiceProvider());
-        $app->register(new \Silex\Provider\MonologServiceProvider(),
+        $app->register(new UrlGeneratorServiceProvider());
+        $app->register(new ServiceControllerServiceProvider());
+        $app->register(new SessionServiceProvider());
+        $app->register(new MonologServiceProvider(),
             array(
             'monolog.logfile' => $logdir.'/application.log',
-            'monolog.level' => \Monolog\Logger::WARNING,
+            'monolog.level' => Logger::WARNING,
         ));
 
         /* Twig Template Engine */
-        $app->register(new \Silex\Provider\TwigServiceProvider(),
+        $app->register(new TwigServiceProvider(),
             array(
             'twig.path' => realpath($config->viewsDir),
         ));
 
         /* Root controller */
-        $app->mount('/', new \GitSync\Provider\RootControllerProvider());
+        $app->mount('/', new RootControllerProvider());
 
         /* if .htaccess file is missing */
         if (!file_exists(GITSYNC_ROOT_DIR.'/.htaccess') && file_exists(GITSYNC_LIB_DIR.'/.htaccess')) {
@@ -65,31 +82,31 @@ class Application extends \Silex\Application
     }
 
     /**
-     * Add & activate a security
-     * @param \GitSync\Security\SecurityProviderInterface $provider
-     * @param string $id
+     * Activate security using the provided Authentication Factory and User Provider
+     * @param AuthenticationFactoryInterface $authFactory
+     * @param UserProviderInterface $userProvider
      */
-    public function activateSecurity(\Securilex\DriverInterface $driver)
+    public function activateSecurity(AuthenticationFactoryInterface $authFactory,
+                                     UserProviderInterface $userProvider)
     {
         if (!$this->security) {
-            $this->security = new \Securilex\ServiceProvider();
-            $this->firewall = new \Securilex\Firewall('/', $driver, '/login/',
-                '/login/doLogin');
+            $this->security = new ServiceProvider();
+            $this->firewall = new Firewall('/', $authFactory, $userProvider,
+                '/login/');
             $this->security->addFirewall($this->firewall);
+            $this->security->addAuthorizationVoter(new SecuredAccessVoter());
             $this->register($this->security);
 
             /* Auth controller */
             $this['auth.controller'] = $this->share(function() {
-                return new \GitSync\Controller\Auth($this);
+                return new Auth($this);
             });
 
             /* Add routes */
             $this->match('/login/', 'auth.controller:login')->bind('login');
-            $this->match('/login/doLogin')->run(function() {
-                new RedirectResponse($this->path('context_index'));
-            })->bind('doLogin');
         } else {
-            $this->firewall->addDriver($driver);
+            $this->firewall->addAuthenticationFactory($authFactory,
+                $userProvider);
         }
     }
 
@@ -104,7 +121,7 @@ class Application extends \Silex\Application
 
     /**
      * Get the logged in user, null if security is not enabled
-     * @return \Symfony\Component\Security\Core\User\UserInterface
+     * @return UserInterface
      */
     public function user()
     {

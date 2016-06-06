@@ -4,13 +4,17 @@ namespace GitSync;
 
 include_once __DIR__.'/../constants.php';
 
+use GitElephant\GitBinary;
 use GitElephant\Objects\Commit;
+use GitElephant\Objects\Remote;
+use Securilex\Authorization\SecuredAccessInterface;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * A Context represents a directory in the server's filesystem that will be
  * managed by a specific list of users via GitSync.
  */
-class Context implements \Securilex\Authorization\SecuredAccessInterface
+class Context implements SecuredAccessInterface
 {
 
     use \Securilex\Authorization\SecuredAccessTrait;
@@ -21,7 +25,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
 
     /**
      * Git repo manager object
-     * @var \GitSync\Repository
+     * @var Repository
      */
     protected $repo;
 
@@ -45,7 +49,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
 
     /**
      * The remote object
-     * @var \GitElephant\Objects\Remote
+     * @var Remote
      */
     protected $remote;
 
@@ -81,13 +85,13 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
 
     /**
      * The HEAD commit
-     * @var \GitElephant\Objects\Commit
+     * @var Commit
      */
     private $head = null;
 
     /**
      * The remote HEAD commit
-     * @var \GitElephant\Objects\Commit
+     * @var Commit
      */
     private $remote_head = null;
 
@@ -167,7 +171,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
     /**
      * Retrieve an instance of \GitSync\Repository object associated with
      * this context's path
-     * @return \GitSync\Repository
+     * @return Repository
      */
     public function getRepo()
     {
@@ -177,8 +181,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
                 $gitbin = '"C:\Program Files\Git\bin\git.exe"';
             }
 
-            $this->repo = new \GitSync\Repository($this->path,
-                new \GitElephant\GitBinary($gitbin)
+            $this->repo = new Repository($this->path, new GitBinary($gitbin)
             );
         }
         return $this->repo;
@@ -187,7 +190,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
     /**
      * Retrieve an instance of \GitElephant\Objects\Remote object associated with
      * this context's current git repository state
-     * @return \GitElephant\Objects\Remote
+     * @return Remote
      * @throws \Exception
      */
     public function getRemote()
@@ -251,8 +254,8 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
             $repo->createBranch($this->branch_name, $this->getRemoteBranchName());
             $this->checkout($this->branch_name, $by);
         } catch (\Exception $e2) {
-            $fs = new \Symfony\Component\Filesystem\Filesystem();
-            $fs->remove(realpath($this->path.'/.git/'));
+            $fs = new Filesystem();
+            $fs->remove($this->path.'/.git/');
             throw $e2;
         }
         $this->is_initialized = true;
@@ -372,7 +375,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
 
     /**
      * Get the HEAD commit
-     * @return \GitElephant\Objects\Commit
+     * @return Commit
      */
     public function getHead()
     {
@@ -384,7 +387,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
 
     /**
      * Get the remote HEAD commit
-     * @return \GitElephant\Objects\Commit
+     * @return Commit
      */
     public function getRemoteHead()
     {
@@ -396,7 +399,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
 
     /**
      * Get the list of last few commits in the selected branch
-     * @return \GitSync\Revision[]
+     * @return Revision[]
      */
     public function getLatestRevisions()
     {
@@ -440,7 +443,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
     /**
      * Get list of modifications
      * @param bool $recursive true to recurse submodules; default to false, showing only modified submodule folders
-     * @return \GitSync\Modification[]
+     * @return Modification[]
      */
     public function getModifications($recursive = false)
     {
@@ -448,13 +451,12 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
         $context       = $this;
         $recurse_find  = function($repo, $path) use (&$recurse_find, $context, $recursive, &$modifications) {
             foreach ($repo->getStatus()->all() as $status) {
-                $modifications[] = new \GitSync\Modification($this, $status,
-                    $path);
+                $modifications[] = new Modification($this, $status, $path);
                 $fullpath        = \realpath($context->getPath().'/'.$path.$status->getName());
                 if ($recursive && file_exists($fullpath.'/.git')) {
-                    $subrepo = new \GitSync\Repository($fullpath,
-                        new \GitElephant\GitBinary(strncasecmp(PHP_OS, 'WIN', 3)
-                        == 0 ? '"C:\Program Files\Git\bin\git.exe"' : null));
+                    $subrepo = new Repository($fullpath,
+                        new GitBinary(strncasecmp(PHP_OS, 'WIN', 3) == 0 ? '"C:\Program Files\Git\bin\git.exe"'
+                                : null));
                     $recurse_find($subrepo,
                         str_replace('\\', '/',
                             substr($fullpath, 1 + strlen($context->getPath()))).'/');
@@ -489,7 +491,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
 
     protected function getAuditFile()
     {
-        return $this->logdir ? $this->logdir.'/'.$this->id.'.log' : null;
+        return $this->path.'/.git/gitsync.log';
     }
 
     protected function auditEvent(Commit $new_head, Commit $old_head = null,
@@ -527,7 +529,7 @@ class Context implements \Securilex\Authorization\SecuredAccessInterface
         $auditlog  = array();
         if (($auditfile = @\fopen($this->getAuditFile(), 'r'))) {
             while (($line = fgets($auditfile))) {
-                $auditlog[] = \GitSync\Audit::deserialize($line);
+                $auditlog[] = Audit::deserialize($line);
             }
             \fclose($auditfile);
         }
