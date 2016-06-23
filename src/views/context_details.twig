@@ -1,3 +1,5 @@
+{% import "macros.twig" as m %}
+
 <script>
 	$(function() {
 		$('#pagetab.menu .item').tab({
@@ -41,25 +43,7 @@
 {% if unsync %}
 <div class="ui bottom attached active tab segment" data-tab="unsync">
 	<p>The following direct modifications to files have been found:</p>
-	<table class="ui celled striped compact red table">
-		<thead>
-			<tr>
-				<th>Status</th>
-				<th>Filename with path</th>
-				<th>Modified</th>
-			</tr>
-		</thead>
-		<tbody>
-		{% set desc = {'': 'Staged', 'M': 'Modified', 'A': 'Added', 'D': 'Deleted', 'R': 'Renamed', 'C': 'Copied', '?': 'New'} %}
-		{% for mod in modifications %}
-			<tr>
-				<td class="collapsing">{{desc[mod.status]}}</td>
-				<td>{{mod.filename}}</td>
-				<td class="collapsing">{%if mod.mtime %}{{mod.mtime.format('Y-m-d H:i')}}{% else %}-{% endif %}</td>
-			</tr>
-		{% endfor %}
-		</tbody>
-	</table>
+	{{ m.modificationTable(modifications) }}
 </div>
 {% endif %}
 
@@ -88,11 +72,7 @@
 					{% if revision.getCommit() == head and not context.isDirty() %}
 					<i class="ui check square icon"></i>OK
 					{% else %}
-					<form action="{{app.path('context_checkout', {'ctxid': ctxid})}}" method="post" onSubmit="return confirm('Sync with {{revision.getRef(true)}}?') && $('#dimmer_sync').dimmer('show') != null;">
-					<input type="hidden" name="redirect" value="{{app.path('context_details', {'ctxid': ctxid})}}#/revisions" />
-					<input type="hidden" name="ref" value="{{revision.getRef()}}" />
-					<input type="submit" class="ui primary button" value="Sync" />
-					</form>
+					<a href="{{app.path('context_presync', {'ctxid': ctxid, 'ref': revision.getRef()})}}" class="ui button">Sync</a>
 					{% endif %}</td>
 			</tr>
 			{% else %}
@@ -138,18 +118,6 @@
 			<h2 class="ui inverted icon header">
 				<i class="refresh icon"></i>
 				Refresh in progress
-				<div class="sub header">Please wait for a while ...</div>
-			</h2>
-		</div>
-	</div>
-</div>
-
-<div id="dimmer_sync" class="ui page dimmer">
-	<div class="content">
-		<div class="center">
-			<h2 class="ui inverted icon header">
-				<i class="download icon"></i>
-				Sync in progress
 				<div class="sub header">Please wait for a while ...</div>
 			</h2>
 		</div>

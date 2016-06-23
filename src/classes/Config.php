@@ -43,6 +43,12 @@ class Config
     public $contextInitView = 'context_init';
 
     /**
+     * Context presync view
+     * @var string
+     */
+    public $contextPresyncView = 'context_presync';
+
+    /**
      * Log files directory
      * @var string
      */
@@ -54,7 +60,6 @@ class Config
      */
     public function addContext(\GitSync\Context $context)
     {
-        $context->setLogDir($this->logdir);
         $this->contexts[$context->getId()] = $context;
     }
 
@@ -96,5 +101,10 @@ class Config
         foreach ($this->contexts as $context) {
             $context->setLogDir($this->logdir);
         }
+    }
+
+    public function saveContextsToFile($fullfilepath)
+    {
+        return (file_put_contents($fullfilepath, serialize($this->contexts)) > 0);
     }
 }

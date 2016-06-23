@@ -86,12 +86,24 @@ class Context extends \GitSync\Base\Controller
         return new RedirectResponse($this->app->path('context_index'));
     }
 
-    public function checkout(Request $request, $ctxid)
+    public function presync(Request $request, $ctxid, $ref)
     {
         $context = $this->getContext($ctxid);
-        if (($refstr  = $request->request->get('ref'))) {
-            $context->checkout($refstr, $this->app->uid());
-        }
+        $diff    = $context->getRepo()->getDiff($ref, 'HEAD');
+        return $this->renderDisplay($this->app['config']->contextPresyncView,
+                array(
+                'ctxid' => $ctxid,
+                'ref' => $ref,
+                'context' => $context,
+                'modifications' => $context->getModifications(true),
+                'diff' => $diff,
+        ));
+    }
+
+    public function dosync(Request $request, $ctxid, $ref)
+    {
+        $context = $this->getContext($ctxid);
+        $context->checkout($ref, $this->app->uid());
         return new RedirectResponse($request->request->get('redirect') ? : $this->app->path('context_details',
                     array('ctxid' => $ctxid)));
     }

@@ -14,7 +14,7 @@ use Symfony\Component\Filesystem\Filesystem;
  * A Context represents a directory in the server's filesystem that will be
  * managed by a specific list of users via GitSync.
  */
-class Context implements SecuredAccessInterface
+class Context implements SecuredAccessInterface, \Serializable
 {
 
     use \Securilex\Authorization\SecuredAccessTrait;
@@ -72,12 +72,6 @@ class Context implements SecuredAccessInterface
     protected $branch_name;
 
     /**
-     * Log files directory
-     * @var string
-     */
-    protected $logdir = null;
-
-    /**
      * Criteria to list revisions. If integer then limit by count, otherwise list revisions until a tag with same value is found.
      * @var string|integer
      */
@@ -128,8 +122,7 @@ class Context implements SecuredAccessInterface
         } else {
             $this->id = \basename($path);
         }
-        $this->name    = ($name ? : $this->id);
-        $this->logfile = $this->id.'.log';
+        $this->name = ($name ? : $this->id);
     }
 
     /**
@@ -469,17 +462,6 @@ class Context implements SecuredAccessInterface
     }
 
     /**
-     * Set log files directory
-     * @param string $newlogdir
-     */
-    public function setLogDir($newlogdir)
-    {
-        if (is_dir($newlogdir) && is_writable($newlogdir)) {
-            $this->logdir = $newlogdir;
-        }
-    }
-
-    /**
      * Set the criteria to list revisions.
      * If integer then limit by count, otherwise list revisions until a tag with same value is found.
      * @param string|integer $list_revisions_until
@@ -534,5 +516,32 @@ class Context implements SecuredAccessInterface
             \fclose($auditfile);
         }
         return $auditlog;
+    }
+
+    public function serialize()
+    {
+        return serialize(array(
+            'id' => $this->id,
+            'name' => $this->name,
+            'path' => $this->path,
+            'remote_url' => $this->remote_url,
+            'remote_name' => $this->remote_name,
+            'branch_name' => $this->branch_name,
+            'allowedRoles' => $this->allowedRoles,
+            'allowedUsernames' => $this->allowedUsernames,
+        ));
+    }
+
+    public function unserialize($serialized)
+    {
+        $arr                    = unserialize($serialized);
+        $this->id               = $arr['id'];
+        $this->name             = $arr['name'];
+        $this->path             = $arr['path'];
+        $this->remote_url       = $arr['remote_url'];
+        $this->remote_name      = $arr['remote_name'];
+        $this->branch_name      = $arr['branch_name'];
+        $this->allowedRoles     = $arr['allowedRoles'];
+        $this->allowedUsernames = $arr['allowedUsernames'];
     }
 }

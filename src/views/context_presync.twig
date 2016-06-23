@@ -1,0 +1,80 @@
+{% import "macros.twig" as m %}
+
+<h1 class="ui header">
+	<i class="sitemap icon"></i>
+	<div class="content">{{context.getName()}} [{{context.getPath()}}]</div>
+</h1>
+
+<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
+<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranchName()}}</div>
+{% if context.isDirty() %}
+<div class="ui red label"><i class="warning sign icon"></i>Unsync</div>
+{% endif %}
+{% if not context.isLatest() %}
+<div class="ui orange label"><i class="warning sign icon"></i>Outdated</div>
+{% endif %}
+
+<script>
+$(function() {
+	$('.ui.accordion').accordion();
+});
+</script>
+
+<h2>Upon syncing with {{ref}}, the followings will occur:</h2>
+{% set diffline = { 'added':'+ ', 'deleted':'- ', 'unchanged':'  '} %} 
+<div class="ui styled fluid accordion">
+  {% if modifications|length > 0 %}
+  <div class="title">
+    <i class="dropdown icon"></i>
+	All untracked changes in the directory will be reverted
+  </div>
+  <div class="content">
+	{{ m.modificationTable(modifications) }}
+  </div>
+  {% endif %}
+{% for d in diff %}
+  <div class="title">
+    <i class="dropdown icon"></i>
+	{% if d.getMode() == 'renamed_file' %}
+	{{d.getOriginalPath()}} will be renamed as {{d.getDestinationPath()}}
+	{% elseif d.getMode() == 'new_file' %}
+	{{d.getOriginalPath()}} will be added
+	{% elseif d.getMode() == 'deleted_file' %}
+	{{d.getOriginalPath()}} will be deleted
+	{% else %}
+	{{d.getOriginalPath()}} will be modified
+	{% endif %}
+  </div>
+  <div class="content">
+	{% set n = 0 %}
+	{% for chunk in d %}
+	{% if chunk|length %}
+		{% set n = n + 1 %}
+		<p>Excerpt #{{n}}</p>
+		<pre class="ui segment">{% for line in chunk %}
+{{diffline[line.getType()]}}{{line}}
+{% endfor %}</pre>
+	{% endif %}
+	{% endfor %}
+  </div>
+{% endfor %}
+</div>
+<h2>Proceed if you understand what you are doing, cancel otherwise.</h2>
+<form action="{{app.path('context_dosync', {'ctxid': ctxid, 'ref':ref})}}" method="post" onSubmit="return confirm('Sync with {{ref}}?') && $('#dimmer_sync').dimmer('show') != null;">
+<input type="hidden" name="redirect" value="{{app.path('context_details', {'ctxid': ctxid})}}#/revisions" />
+<input type="hidden" name="ref" value="{{ref}}" />
+<input type="submit" class="ui primary button" value="Proceed to Sync" />
+<a href="{{app.path('context_details', {'ctxid': ctxid})}}" class="ui button secondary">Cancel</a>
+</form>
+
+<div id="dimmer_sync" class="ui page dimmer">
+	<div class="content">
+		<div class="center">
+			<h2 class="ui inverted icon header">
+				<i class="download icon"></i>
+				Sync in progress
+				<div class="sub header">Please wait for a while ...</div>
+			</h2>
+		</div>
+	</div>
+</div>

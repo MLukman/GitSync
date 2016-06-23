@@ -14,8 +14,10 @@ class RootControllerProvider implements \Silex\ControllerProviderInterface
         });
 
         $controllers->get('/ctx/{ctxid}/init/', 'context.controller:init')->bind('context_init');
-        $controllers->post('/ctx/{ctxid}/checkout/',
-            'context.controller:checkout')->bind('context_checkout');
+        $controllers->get('/ctx/{ctxid}/sync/{ref}',
+            'context.controller:presync')->bind('context_presync');
+        $controllers->post('/ctx/{ctxid}/sync/{ref}',
+            'context.controller:dosync')->bind('context_dosync');
         $controllers->get('/ctx/{ctxid}/refresh/', 'context.controller:refresh')->bind('context_refresh');
         $controllers->get('/ctx/{ctxid}/', 'context.controller:details')->bind('context_details');
         $controllers->get('/refresh/', 'context.controller:refreshAll')->bind('context_refresh_all');

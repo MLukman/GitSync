@@ -1,0 +1,21 @@
+{% macro modificationTable(modifications) %}
+	<table class="ui celled striped compact red table">
+		<thead>
+			<tr>
+				<th>Status</th>
+				<th>Filename with path</th>
+				<th>Modified</th>
+			</tr>
+		</thead>
+		<tbody>
+		{% set desc = {'': 'Staged', 'M': 'Modified', 'A': 'Added', 'D': 'Deleted', 'R': 'Renamed', 'C': 'Copied', '?': 'New'} %}
+		{% for mod in modifications %}
+			<tr>
+				<td class="collapsing">{{desc[mod.status]}}</td>
+				<td>{{mod.filename}}</td>
+				<td class="collapsing">{%if mod.mtime %}{{mod.mtime.format('Y-m-d H:i')}}{% else %}-{% endif %}</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+{% endmacro %}
