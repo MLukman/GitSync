@@ -22,7 +22,8 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"GitSync\\": "src/classes/"
+			"GitSync\\": "src/classes/",
+			"GitElephant\\": "src/GitElephant/"
 		}
 	}
 }

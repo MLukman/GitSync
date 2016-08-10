@@ -329,7 +329,6 @@ class Context implements SecuredAccessInterface, \Serializable
                 $this->remote_name, $this->branch_name), null, 'ff-only');
         } else {
             // to avoid detached head, create/re-create branch when checkout a commit
-            $repo->checkout($ref);
             if ($repo->getBranch(self::GS_BRANCH)) {
                 $repo->deleteBranch(self::GS_BRANCH, true);
             }
