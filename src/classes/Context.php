@@ -113,7 +113,11 @@ class Context implements SecuredAccessInterface, \Serializable
                                 $remote_name = 'origin', $name = null,
                                 $id = null)
     {
-        $this->path        = \realpath($path);
+        if (($realpath = \realpath($path))) {
+            $this->path = $realpath;
+        } else if (mkdir($path, 0755, true)) {
+            $this->path = \realpath($path);
+        }
         $this->remote_url  = $remote_url;
         $this->remote_name = $remote_name;
         $this->branch_name = $branch_name;
@@ -269,7 +273,7 @@ class Context implements SecuredAccessInterface, \Serializable
         if (is_null($this->is_dirty)) {
             try {
                 $this->is_dirty       = $this->getRepo()->isDirty();
-                $this->is_initialized = true;
+                $this->is_initialized = file_exists($this->path.'/.git');
             } catch (\Exception $e) {
                 if (!strpos($e->getMessage(), 'Not a git repository')) {
                     throw $e;
@@ -292,8 +296,8 @@ class Context implements SecuredAccessInterface, \Serializable
         $repo   = $this->getRepo();
         $branch = $repo->getBranch($this->branch_name);
         $head   = $this->getHead();
-        return $branch->getCurrent() && $head->getSha() == $branch->getSha() && $head->getDatetimeCommitter()
-            >= $this->getRemoteHead()->getDatetimeCommitter();
+        return ($branch && $branch->getCurrent() && $head->getSha() == $branch->getSha())
+            && $head->getDatetimeCommitter() >= $this->getRemoteHead()->getDatetimeCommitter();
     }
 
     /**
@@ -320,7 +324,12 @@ class Context implements SecuredAccessInterface, \Serializable
 
         $repo   = $this->getRepo();
         $refSha = $repo->getCommit($ref)->getSha();
-        if ($refSha == $repo->getCommit($this->branch_name)->getSha()) {
+        $branch = $repo->getBranch($this->branch_name);
+        if (!$branch && $refSha == $repo->getCommit($this->getRemoteBranchName())->getSha()) {
+            // if checkout to the head of a remote branch with no local branch yet
+            $repo->createBranch($this->branch_name, $this->getRemoteBranchName());
+            $repo->checkout($this->branch_name);
+        } elseif ($refSha == $repo->getBranch($this->branch_name)->getSha()) {
             // checkout branch name to prevent detached head
             $repo->checkout($this->branch_name);
         } elseif ($refSha == $this->getRemoteHead()->getSha()) {

@@ -91,8 +91,9 @@ class Application extends \Silex\Application
     {
         if (!$this->security) {
             $this->security = new ServiceProvider();
-            $this->firewall = new Firewall('/', $authFactory, $userProvider,
-                '/login/');
+            $this->firewall = new Firewall('/', '/login/');
+            $this->firewall->addAuthenticationFactory($authFactory,
+                $userProvider);
             $this->security->addFirewall($this->firewall);
             $this->security->addAuthorizationVoter(new SecuredAccessVoter());
             $this->register($this->security);
