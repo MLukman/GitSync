@@ -16,6 +16,11 @@ class SubmoduleCommand extends \GitElephant\Command\SubmoduleCommand
         $this->clearAll();
         $this->addCommandName(sprintf('%s %s', self::SUBMODULE_COMMAND,
                 self::SUBMODULE_FOREACH_COMMAND));
+
+        if ($cmd instanceof \GitElephant\Command\BaseCommand) {
+            $cmd = $cmd->getCommand();
+        }
+
         $this->addCommandArgument($cmd);
 
         return $this->getCommand();

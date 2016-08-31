@@ -72,7 +72,7 @@
 					{% if revision.getCommit() == head and not context.isDirty() %}
 					<i class="ui check square icon"></i>OK
 					{% else %}
-					<a href="{{app.path('context_presync', {'ctxid': ctxid, 'ref': revision.getRef()})}}" class="ui button">Sync</a>
+					<a href="{{app.path('context_presync', {'ctxid': ctxid, 'ref': revision.getRef()|url_encode})}}" class="ui button">Sync</a>
 					{% endif %}</td>
 			</tr>
 			{% else %}

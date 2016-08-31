@@ -408,7 +408,7 @@ class Context implements SecuredAccessInterface, \Serializable
             $limit    = $this->list_revisions_until;
             $stopwhen = null;
         } else {
-            $limit    = 100;
+            $limit    = null;
             $stopwhen = $this->list_revisions_until;
         }
         $repo = $this->getRepo();
@@ -422,7 +422,9 @@ class Context implements SecuredAccessInterface, \Serializable
         }
         $revisions = array();
         $continue  = true;
-        foreach ($repo->getLog($this->getRemoteBranchName(), null, $limit) as $commit) {
+        $branchlog = new BranchLog($repo, $this->getRemoteBranchName(), null,
+            $limit);
+        foreach ($branchlog as $commit) {
             if ($continue) {
                 $rev = new Revision($commit);
                 $sha = $commit->getSHA();
@@ -456,8 +458,7 @@ class Context implements SecuredAccessInterface, \Serializable
                 $fullpath        = \realpath($context->getPath().'/'.$path.$status->getName());
                 if ($recursive && file_exists($fullpath.'/.git')) {
                     $subrepo = new Repository($fullpath,
-                        new GitBinary(strncasecmp(PHP_OS, 'WIN', 3) == 0 ? '"C:\Program Files\Git\bin\git.exe"'
-                                : null));
+                        new GitBinary(strncasecmp(PHP_OS, 'WIN', 3) == 0 ? '"C:\Program Files\Git\bin\git.exe"' : null));
                     $recurse_find($subrepo,
                         str_replace('\\', '/',
                             substr($fullpath, 1 + strlen($context->getPath()))).'/');
