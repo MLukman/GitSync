@@ -54,6 +54,7 @@
 			<tr>
 				<th>Timestamp</th>
 				<th>Tag/SHA</th>
+				<th>Committer</th>
 				<th colspan="2">Message</th>
 			</tr>
 		</thead>
@@ -67,6 +68,7 @@
 				{% else %}{{revision.getSHA(true)}}
 				{% endfor %}
 				</td>
+				<td>{{revision.getCommitter().getName()}}</td>
 				<td>{{revision.getMessage()}}</td>
 				<td class="ui center aligned collapsing">
 					{% if revision.getCommit() == head and not context.isDirty() %}

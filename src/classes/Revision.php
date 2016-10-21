@@ -46,6 +46,14 @@ class Revision
     }
 
     /**
+     * Get committer
+     * @return \GitElephant\Objects\Author Committer object
+     */
+    public function getCommitter() {
+        return $this->commit->getCommitter();
+    }
+
+    /**
      * Get the revision message
      * @return string
      */
