@@ -126,7 +126,7 @@ class Context implements SecuredAccessInterface, \Serializable
         } else {
             $this->id = \basename($path);
         }
-        $this->name = ($name ? : $this->id);
+        $this->name = ($name ?: $this->id);
     }
 
     /**
@@ -357,6 +357,21 @@ class Context implements SecuredAccessInterface, \Serializable
 
         $this->head = $this->getRepo()->getCommit('HEAD');
         $this->auditEvent($this->head, $old_head, $by);
+
+        // store latest sha & tags
+        $fn          = $this->path.'/.git/gitsync.latest';
+        $data        = (file_exists($fn) ? json_decode(file_get_contents($fn)) : array());
+        $data['sha'] = $repo->getCommit()->getSha();
+        $tags        = array();
+        foreach ($repo->getTags() as $tag) {
+            if ($tag->getSha() == $data['sha']) {
+                $tags[] = $tag->getName();
+            }
+        }
+        if (!empty($tags)) {
+            $data['tags'] = $tags;
+        }
+        file_put_contents($fn, json_encode($data));
     }
 
     /**
@@ -503,10 +518,10 @@ class Context implements SecuredAccessInterface, \Serializable
             if ($new_head->getSha() == $this->getRepo()->getCommit($this->branch_name)) {
                 $event .= ' TO LATEST';
             }
-            $audit = new Audit($by ? : '-', $event,
+            $audit = new Audit($by ?: '-', $event,
                 $old_head ? sprintf('%s @ %s - %s', $old_head->getSha(true),
-                        $old_head->getDatetimeAuthor()->format('Ymd_Hi'),
-                        $old_head->getMessage()) : null,
+                    $old_head->getDatetimeAuthor()->format('Ymd_Hi'),
+                    $old_head->getMessage()) : null,
                 sprintf('%s @ %s - %s', $new_head->getSha(true),
                     $new_head->getDatetimeAuthor()->format('Ymd_Hi'),
                     $new_head->getMessage()));
