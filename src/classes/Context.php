@@ -360,7 +360,7 @@ class Context implements SecuredAccessInterface, \Serializable
 
         // store latest sha & tags
         $fn          = $this->path.'/.git/gitsync.latest';
-        $data        = (file_exists($fn) ? json_decode(file_get_contents($fn)) : array());
+        $data        = (file_exists($fn) ? json_decode(file_get_contents($fn), true) : array());
         $data['sha'] = $repo->getCommit()->getSha();
         $tags        = array();
         foreach ($repo->getTags() as $tag) {
