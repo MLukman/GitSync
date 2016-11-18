@@ -80,6 +80,7 @@ class TagCommand extends BaseCommand
     {
         $this->clearAll();
         $this->addCommandName(self::TAG_COMMAND);
+        $this->addCommandArgument('--sort=creatordate');
 
         return $this->getCommand();
     }
