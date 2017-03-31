@@ -7,7 +7,7 @@ include_once __DIR__.'/../constants.php';
 use GitSync\Controller\Auth;
 use GitSync\Provider\RootControllerProvider;
 use Monolog\Logger;
-use Securilex\Authentication\AuthenticationFactoryInterface;
+use Securilex\Authentication\Factory\AuthenticationFactoryInterface;
 use Securilex\Authorization\SecuredAccessVoter;
 use Securilex\Firewall;
 use Securilex\ServiceProvider;
