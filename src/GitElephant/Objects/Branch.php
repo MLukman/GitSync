@@ -96,11 +96,10 @@ class Branch extends Object implements TreeishInterface
      * @throws \InvalidArgumentException
      * @return Branch
      */
-    public static function createFromOutputLine(Repository $repository,
-                                                $outputLine)
+    public static function createFromOutputLine(Repository $repository, $outputLine)
     {
         $matches = static::getMatches($outputLine);
-        $branch  = new self($repository, $matches[1]);
+        $branch = new self($repository, $matches[1]);
         $branch->parseOutputLine($outputLine);
 
         return $branch;
@@ -115,8 +114,7 @@ class Branch extends Object implements TreeishInterface
      * @throws \Symfony\Component\Process\Exception\RuntimeException
      * @return Branch
      */
-    public static function checkout(Repository $repository, $name,
-                                    $create = false)
+    public static function checkout(Repository $repository, $name, $create = false)
     {
         if ($create) {
             $branch = self::create($repository, $name);
@@ -157,7 +155,7 @@ class Branch extends Object implements TreeishInterface
      */
     private function createFromCommand()
     {
-        $command     = BranchCommand::getInstance($this->getRepository())->listBranches();
+        $command = BranchCommand::getInstance($this->getRepository())->listBranches();
         $outputLines = $this->repository->getCaller()->execute($command)->getOutputLines(true);
         foreach ($outputLines as $outputLine) {
             $matches = static::getMatches($outputLine);
@@ -167,8 +165,7 @@ class Branch extends Object implements TreeishInterface
                 return;
             }
         }
-        throw new InvalidBranchNameException(sprintf('The %s branch doesn\'t exists',
-            $this->name));
+        throw new InvalidBranchNameException(sprintf('The %s branch doesn\'t exists', $this->name));
     }
 
     /**
@@ -181,13 +178,13 @@ class Branch extends Object implements TreeishInterface
     {
         if (preg_match('/^\* (.*)/', $branchString, $matches)) {
             $this->current = true;
-            $branchString  = substr($branchString, 2);
+            $branchString = substr($branchString, 2);
         } else {
             $branchString = trim($branchString);
         }
-        $matches       = static::getMatches($branchString);
-        $this->name    = $matches[1];
-        $this->sha     = $matches[2];
+        $matches = static::getMatches($branchString);
+        $this->name = $matches[1];
+        $this->sha = $matches[2];
         $this->comment = $matches[3];
     }
 
@@ -202,8 +199,7 @@ class Branch extends Object implements TreeishInterface
     public static function getMatches($branchString)
     {
         $matches = array();
-        preg_match('/^\*?\ *?(\S+)\ +(\S{40})\ +(.+)$/', trim($branchString),
-            $matches);
+        preg_match('/^\*?\ *?(\S+)\ +(\S{40})\ +(.+)$/', trim($branchString), $matches);
         if (!count($matches)) {
             preg_match('/^\*?\ *?\(.*(detached).*\)\ +(\S{40})\ +(.+)$/',
                 trim($branchString), $matches);
