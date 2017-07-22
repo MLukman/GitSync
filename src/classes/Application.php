@@ -60,15 +60,13 @@ class Application extends \Silex\Application
         $app->register(new UrlGeneratorServiceProvider());
         $app->register(new ServiceControllerServiceProvider());
         $app->register(new SessionServiceProvider());
-        $app->register(new MonologServiceProvider(),
-            array(
+        $app->register(new MonologServiceProvider(), array(
             'monolog.logfile' => $logdir.'/application.log',
             'monolog.level' => Logger::WARNING,
         ));
 
         /* Twig Template Engine */
-        $app->register(new TwigServiceProvider(),
-            array(
+        $app->register(new TwigServiceProvider(), array(
             'twig.path' => realpath($config->viewsDir),
         ));
 
@@ -82,7 +80,10 @@ class Application extends \Silex\Application
     }
 
     /**
-     * Activate security using the provided Authentication Factory and User Provider
+     * Activate security using the provided Authentication Factory and User Provider.
+     * It is possible to use multiple pairs of Authentication Factory and User Provider
+     * by calling this method multiple times.
+     *
      * @param AuthenticationFactoryInterface $authFactory
      * @param UserProviderInterface $userProvider
      */
@@ -92,8 +93,7 @@ class Application extends \Silex\Application
         if (!$this->security) {
             $this->security = new ServiceProvider();
             $this->firewall = new Firewall('/', '/login/');
-            $this->firewall->addAuthenticationFactory($authFactory,
-                $userProvider);
+            $this->firewall->addAuthenticationFactory($authFactory, $userProvider);
             $this->security->addFirewall($this->firewall);
             $this->security->addAuthorizationVoter(new SecuredAccessVoter());
             $this->register($this->security);
@@ -106,8 +106,7 @@ class Application extends \Silex\Application
             /* Add routes */
             $this->match('/login/', 'auth.controller:login')->bind('login');
         } else {
-            $this->firewall->addAuthenticationFactory($authFactory,
-                $userProvider);
+            $this->firewall->addAuthenticationFactory($authFactory, $userProvider);
         }
     }
 
@@ -145,6 +144,17 @@ class Application extends \Silex\Application
      */
     public function isGranted($role)
     {
-        return ($this->user() && $this['security.authorization_checker']->isGranted($role));
+        return ($this->user() && $this['securilex']->isGranted($role));
+    }
+
+    public function getContexts($checkAccess = true)
+    {
+        $contexts = array();
+        foreach ($this['config']->getContexts() as $context) {
+            if (!$checkAccess || $context->checkAccess($this)) {
+                $contexts[$context->getId()] = $context;
+            }
+        }
+        return $contexts;
     }
 }

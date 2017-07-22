@@ -1,12 +1,16 @@
-<h1 class="ui header">
-	<i class="sitemap icon"></i>
-	<div class="content">{{ctxid}} [{{path}}]</div>
-</h1>
+{% extends "content.twig" %}
 
-<div class="ui message">
-Please wait for a few seconds for this path to be set up with Git repository ...
-</div>
+{% block content %}
+	<h1 class="ui header">
+		<i class="sitemap icon"></i>
+		<div class="content">{{ctxid}} [{{path}}]</div>
+	</h1>
 
-<script>
-window.location = {{app.path('context_init', {'ctxid':ctxid})|json_encode|raw}};
-</script>
+	<div class="ui message">
+		Please wait for a few seconds for this path to be set up with Git repository ...
+	</div>
+
+	<script>
+		window.location = {{app.path('context_init', {'ctxid':ctxid})|json_encode|raw}};
+	</script>
+{% endblock %}

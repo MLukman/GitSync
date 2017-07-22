@@ -539,7 +539,8 @@ class Context implements SecuredAccessInterface, \Serializable
             }
             \fclose($auditfile);
         }
-        return $auditlog;
+
+        return array_reverse($auditlog);
     }
 
     public function serialize()

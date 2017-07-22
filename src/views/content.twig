@@ -1,0 +1,23 @@
+{% extends "base.twig" %}
+
+{% block menubar %}
+	{% if contexts is defined and contexts|length > 0 %}
+		<div class="ui dropdown item">
+			<i class="ui database icon"></i> 
+			{% if current is defined %}
+				{{current.getName()}}
+				({{current.getPath()}})
+			{% endif %}
+			<i class="dropdown icon"></i>
+			<div class="menu">
+				{% for id,context in contexts %}
+					<a class="item {% if current is defined and current == context %}active{% endif %}" href="{{app.path('context_details', {'ctxid': id})}}">
+						<i class="sitemap icon"></i> 
+						{{context.getName()}}
+						({{context.getPath()}})
+					</a>
+				{% endfor %}
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}

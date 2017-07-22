@@ -1,5 +1,5 @@
 <?php
-// Directory where index.php is running from
+// Directory where GitSync library is located
 define('GITSYNC_LIB_DIR', realpath(__DIR__.'/../'));
 
 // Directory where index.php is running from
