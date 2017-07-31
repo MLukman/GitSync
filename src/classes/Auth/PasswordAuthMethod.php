@@ -23,7 +23,7 @@ class PasswordAuthMethod extends AuthMethodBase
 
     public function getAuthenticationFactory()
     {
-        return $this->factory();
+        return $this->factory;
     }
 
     static public function getName()

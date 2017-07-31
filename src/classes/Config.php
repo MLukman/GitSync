@@ -183,4 +183,31 @@ class Config implements \Silex\ServiceProviderInterface
     {
         $app['config'] = $this;
     }
+
+    public function saveContext($path, $remote_url, $branch = master,
+                                $remote_name = 'origin', $id = null,
+                                $name = null)
+    {
+        $id = $id ?: basename($path);
+        if (!isset($this->queries['ctx.insert'])) {
+            $this->queries['ctx.insert'] = $this->sqlite->prepare("INSERT OR REPLACE INTO contexts (path, remote_url, branch, remote_name, id, name) VALUES (:path, :remote_url, :branch, :remote_name, :id, :name)");
+        }
+        $this->queries['ctx.insert']->bindValue(':path', $path);
+        $this->queries['ctx.insert']->bindValue(':remote_url', $remote_url);
+        $this->queries['ctx.insert']->bindValue(':remote_name', $remote_name);
+        $this->queries['ctx.insert']->bindValue(':branch', $branch);
+        $this->queries['ctx.insert']->bindValue(':id', $id);
+        $this->queries['ctx.insert']->bindValue(':name', $name ?: $id);
+        $this->queries['ctx.insert']->execute();
+    }
+
+    public function getContextByPath($path)
+    {
+        foreach ($this->contexts as $context) {
+            if ($context->getPath() == $path) {
+                return $context;
+            }
+        }
+        return null;
+    }
 }

@@ -24,4 +24,24 @@
 			</div>
 		</div>
 	{% endif %}
+	{% if not app.isSecurityEnabled() or app.isGranted('ROLE_ADMIN') %}
+		{% set menus = { 
+			(app.path('config_contexts')): ['Manage Contexts', 'sitemap'], 
+			(app.path('config_users')): ['Manage Users', 'users']
+		} %}
+		<div class="ui dropdown item">
+			<i class="ui setting icon"></i> 
+			{% if current is defined and menus[current] is defined %}
+				{{menus[current][0]}}
+			{% endif %}
+			<i class="dropdown icon"></i>
+			<div class="menu">
+				{% for path,menu in menus %}
+					<a class="item {% if current is defined and current == path %}active{% endif %}" href="{{path}}">
+						<i class="{{menu[1]}} icon"></i> {{menu[0]}}
+					</a>
+				{% endfor %}
+			</div>
+		</div>
+	{% endif %}
 {% endblock %}

@@ -24,6 +24,7 @@ class ConfigControllerProvider implements \Silex\ControllerProviderInterface
         $controllers->post('/setup', 'setup.controller:setup')->bind('config_setup_post');
         $controllers->get('/users', 'config.controller:users')->bind('config_users');
         $controllers->get('/users/add', 'config.controller:userAdd')->bind('config_user_add');
+        $controllers->post('/users/add', 'config.controller:userAdd')->bind('config_user_add_post');
 
         return $controllers;
     }

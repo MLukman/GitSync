@@ -30,9 +30,9 @@
 						<td>
 							{% for context in contexts %}
 								{% if context.isRoleAllowed(user.getRoles()) or context.isUsernameAllowed(user.getUsername()) %}
-									<div><span class="ui label">{{context.getName()}}</span></div>
-									{% endif %}
-								{% endfor %}
+									<span class="ui label" title="{{context.getPath()}}">{{context.getName()}}</span>
+								{% endif %}
+							{% endfor %}
 						</td>
 						<td class="ui collapsing">
 							<div class="ui dropdown">

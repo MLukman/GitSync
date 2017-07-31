@@ -15,7 +15,37 @@
 			</div>
 		{% else %}
 			<h4 class="ui dividing header">Context Path: {{path}}</h4>
-			{{repo|json_encode}}
+			<div class="ui list">
+				<div class="item">
+					<i class="right triangle icon"></i>
+					<div class="content">					
+						<div class="header">ID</div>
+						<div class="description">{{repo['id']}}</div>
+					</div>
+				</div>
+				<div class="item">
+					<i class="right triangle icon"></i>
+					<div class="content">					
+						<div class="header">Remote Name</div>
+						<div class="description">{{repo['remote']}}</div>
+					</div>
+				</div>
+				<div class="item">
+					<i class="right triangle icon"></i>
+					<div class="content">					
+						<div class="header">Remote URL</div>
+						<div class="description">{{repo['url']}}</div>
+					</div>
+				</div>
+				<div class="item">
+					<i class="right triangle icon"></i>
+					<div class="content">					
+						<div class="header">Branch Name</div>
+						<div class="description">{{repo['branch']}}</div>
+					</div>
+				</div>
+			</div>
+			<input type="hidden" name="path" value="{{path}}" />
 		{% endif %}
 
 		{% if step is defined and step > 0 %}

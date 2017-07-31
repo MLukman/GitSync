@@ -84,6 +84,7 @@ class Application extends \Silex\Application
 
         /* Root controller */
         $app->mount('/', new Provider\RootControllerProvider());
+        $app->mount('/config', new Provider\ConfigControllerProvider());
 
         /* if .htaccess file is missing */
         if (!file_exists(GITSYNC_ROOT_DIR.'/.htaccess') && file_exists(GITSYNC_LIB_DIR.'/.htaccess')) {
@@ -192,23 +193,19 @@ class Application extends \Silex\Application
 
     public function run(Request $request = null)
     {
-        if (!$this->security) {
-            // activate security
-            $this['userProvider'] = new SQLite3UserProvider(new \SQLite3(GITSYNC_DATA_DIR.'config.sqlite'));
-            $this['userProvider']->setUserClass('\Securilex\Authentication\User\SimpleMutableUser');
-
-            if ($this['config']->query('setup.done') && ($method_name = $this['config']->query('auth.method'))
-                && ($auth_method = $this->getAuthenticationMethod($method_name))) {
-                $this['authMethod'] = $auth_method;
-                $authFactory        = $this['authMethod']->getAuthenticationFactory($this['config']->query('auth.params.'.$method_name));
-                $this->activateSecurity($authFactory, $this['userProvider']);
-            } else {
-                $this->before(function(Request $request, \Silex\Application $app) {
-                    if (substr($request->get('_route'), 0, 12) !== "config_setup") {
-                        return new RedirectResponse($app->path('config_setup'));
-                    }
-                });
-            }
+        $this['userProvider'] = new SQLite3UserProvider(new \SQLite3(GITSYNC_DATA_DIR.'config.sqlite'));
+        $this['userProvider']->setUserClass('\Securilex\Authentication\User\SimpleMutableUser');
+        if ($this['config']->query('setup.done') && ($method_name          = $this['config']->query('auth.method'))
+            && ($auth_method          = $this->getAuthenticationMethod($method_name))) {
+            $this['authMethod'] = $auth_method;
+            $authFactory        = $this['authMethod']->getAuthenticationFactory($this['config']->query('auth.params.'.$method_name));
+            $this->activateSecurity($authFactory, $this['userProvider']);
+        } else if (!$this->security) {
+            $this->before(function(Request $request, \Silex\Application $app) {
+                if (substr($request->get('_route'), 0, 12) !== "config_setup") {
+                    return new RedirectResponse($app->path('config_setup'));
+                }
+            });
         }
         parent::run($request);
     }

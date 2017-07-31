@@ -1,0 +1,36 @@
+{% extends "content.twig" %}
+
+{% block content %}
+	<h1 class="header">Add User</h1>
+
+	<form class="ui segment form {% if error is defined and error %}error{% endif %}" method="POST">
+		{% if error is defined and error %}
+			<div class="ui error message">{{error}}</div>
+		{% endif %}
+		<h4 class="ui dividing header">User Info</h4>
+		<div class="field">
+			<label for="auth_username">Username</label>
+			<input id="auth_username" type="text" name="username" placeholder="Username" value="{{app.request.request.get('username')|default(null)}}" />
+		</div>
+		<div class="field">
+			<label for="auth_password">Password</label>
+			<input id="auth_password" type="password" name="password" placeholder="Password" />
+		</div>
+		<div class="field">
+			<label for="auth_password2">Re-type Password</label>
+			<input id="auth_password2" type="password" name="password2" placeholder="Re-type Password" />
+		</div>
+		<div class="field">
+			<label for="auth_role">Role</label>
+			<select id="auth_role" name="role">
+				<option>ROLE_ADMIN</option>
+			</select>
+		</div>
+
+		{% if step is defined and step > 1 %}
+			<input class="ui button" type="button" value="Back" onclick="javascript:window.history.back()" />
+		{% endif %}
+		<input class="ui primary button" type="submit" value="Next" />
+		<input type="hidden" name="step" value="{{step|default(0)}}" />
+	</form>
+{% endblock %}
