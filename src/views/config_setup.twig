@@ -1,0 +1,76 @@
+{% extends "content.twig" %}
+
+{% block content %}
+	<h1>Setup</h1>
+
+	<form class="ui segment form {% if error is defined and error %}error{% endif %}" method="POST">
+		{% if error is defined and error %}
+			<div class="ui error message">{{error}}</div>
+		{% endif %}
+		{% if not step is defined or not app['request'].request.has('method') %}
+			<h3 class="ui header">Authentication Method</h3>
+
+			<div class="ui basic segment">
+				<div class="field">
+					<label>Method</label>
+					<select class="ui fluid dropdown" name="method">
+						{% for id,meth in methods %}
+							<option value="{{id}}">{{meth.name}}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+		{% else %}
+			{% set methid = app['request'].request.get('method') %}
+			<h3 class="ui header">Authentication Method: {{method.name}}</h3>
+			<div class="ui basic segment">
+				{% if step == 1 or method is empty %}
+					<h4 class="ui dividing header">Parameters</h4>
+					{% for p in method.params %}
+						<div class="field">
+							<label for="auth_{{methid}}_{{p[1]}}">{{p[1]}}</label>
+							<input id="auth_{{methid}}_{{p[1]}}" type="text" name="params[{{p[0]}}]" placeholder="{{p[2]}}" value="{{app.request.request.get('params')[p[0]]|default('')}}" />
+						</div>
+					{% endfor %}
+				{% endif %}
+				{% if step > 1 and method.params|length > 0 %}
+					<h4 class="ui dividing header">Parameters</h4>
+					<div class="ui list">
+						{% for p in method.params %}
+							{% set parvalue = app['request'].request.get('params')[p[0]] %}
+							<div class="item">
+								<i class="right triangle icon"></i>
+								<div class="content">					
+									<div class="header">{{p[1]}}</div>
+									<div class="description">{{parvalue|default('<null>')}}</div>
+									<input type="hidden" name="params[{{p[0]}}]" value="{{parvalue}}" />
+								</div>
+							</div>
+						{% endfor %}
+					</div>
+				{% endif %}
+				{% if step == 2 %}
+					<h4 class="ui dividing header">Create Admin User</h4>
+					<div class="field">
+						<label for="auth_username">Username</label>
+						<input id="auth_username" type="text" name="username" placeholder="Username" value="{{app.request.request.get('username')|default(null)}}" />
+					</div>
+					<div class="field">
+						<label for="auth_password">Password</label>
+						<input id="auth_password" type="password" name="password" placeholder="Password" />
+					</div>
+					<div class="field">
+						<label for="auth_password2">Re-type Password</label>
+						<input id="auth_password2" type="password" name="password2" placeholder="Re-type Password" />
+					</div>
+				{% endif %}
+			</div>
+			<input type="hidden" name="method" value="{{methid}}" />
+		{% endif %}
+		{% if step is defined and step > 0 %}
+			<input class="ui button" type="button" value="Back" onclick="javascript:window.history.back()" />
+		{% endif %}
+		<input class="ui primary button" type="submit" value="Next" />
+		<input type="hidden" name="step" value="{{step|default(0)}}" />
+	</form>
+{% endblock %}

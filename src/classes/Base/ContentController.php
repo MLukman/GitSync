@@ -9,6 +9,7 @@ class ContentController extends Controller
     public function __construct(\GitSync\Application $app)
     {
         parent::__construct($app);
+        $this->setCurrent($app['request']->getRequestUri());
     }
 
     public function render($view, array $context = null)
@@ -18,6 +19,11 @@ class ContentController extends Controller
         $this->context->content     = $this->page_content;
         $this->context->contexts    = $this->getAllContexts();
         return parent::render($view, $context);
+    }
+
+    protected function setCurrent($current)
+    {
+        $this->context->current = $current;
     }
 
     protected function getAllContexts()

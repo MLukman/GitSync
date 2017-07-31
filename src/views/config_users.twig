@@ -1,0 +1,51 @@
+{% extends "content.twig" %}
+
+{% block content %}
+	<p></p>
+	<a class="ui primary button" href="{{app.path('config_user_add')}}"><i class="plus icon"></i> Add User</a>
+	<p></p>
+	<form class="ui form {% if error is defined and error %}error{% endif %}" method="POST">
+		{% if error is defined and error %}
+			<div class="ui error message">{{error}}</div>
+		{% endif %}
+
+		<table class="ui celled striped sortable blue table">
+			<thead>
+				<tr>
+					<th>Username</th>
+					<th>Roles</th>
+					<th>Access</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for user in users %}
+					<tr>
+						<td>{{user.getUsername()}}</td>
+						<td>
+							{% for role in user.getRoles() %}
+								<span class="ui label">{{role}}</span>
+							{% endfor %}
+						</td>
+						<td>
+							{% for context in contexts %}
+								{% if context.isRoleAllowed(user.getRoles()) or context.isUsernameAllowed(user.getUsername()) %}
+									<div><span class="ui label">{{context.getName()}}</span></div>
+									{% endif %}
+								{% endfor %}
+						</td>
+						<td class="ui collapsing">
+							<div class="ui dropdown">
+								<i class="dropdown icon"></i>
+								<div class="menu">
+									<a class="item"><i class="ui delete icon"></i> Delete</a>
+								</div>
+							</div>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+
+	</form>
+{% endblock %}

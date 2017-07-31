@@ -106,12 +106,12 @@ class Context implements SecuredAccessInterface, \Serializable
      * @param string $path The filesystem path pointing to the directory
      * @param string $remote_url The git remote URL
      * @param string $branch_name The branch name to track, default to 'master'
-     * @param string $name The user-friendly name of this context (default to the id)
      * @param string $id The id of this context (default to the last part of the path)
+     * @param string $name The user-friendly name of this context (default to the id)
      */
     public function __construct($path, $remote_url, $branch_name = 'master',
-                                $remote_name = 'origin', $name = null,
-                                $id = null)
+                                $remote_name = 'origin', $id = null,
+                                $name = null)
     {
         if (($realpath = \realpath($path))) {
             $this->path = $realpath;
@@ -178,8 +178,7 @@ class Context implements SecuredAccessInterface, \Serializable
                 $gitbin = '"C:\Program Files\Git\bin\git.exe"';
             }
 
-            $this->repo = new Repository($this->path, new GitBinary($gitbin)
-            );
+            $this->repo = new Repository($this->path, new GitBinary($gitbin));
         }
         return $this->repo;
     }
@@ -334,8 +333,7 @@ class Context implements SecuredAccessInterface, \Serializable
             $repo->checkout($this->branch_name);
         } elseif ($refSha == $this->getRemoteHead()->getSha()) {
             // merge fast-forward
-            $repo->checkout($this->branch_name)->merge(new RemoteBranch($repo,
-                $this->remote_name, $this->branch_name), null, 'ff-only');
+            $repo->checkout($this->branch_name)->merge(new RemoteBranch($repo, $this->remote_name, $this->branch_name), null, 'ff-only');
         } else {
             // to avoid detached head, create/re-create branch when checkout a commit
             if ($repo->getBranch(self::GS_BRANCH)) {
@@ -360,7 +358,8 @@ class Context implements SecuredAccessInterface, \Serializable
 
         // store latest sha & tags
         $fn          = $this->path.'/.git/gitsync.latest';
-        $data        = (file_exists($fn) ? json_decode(file_get_contents($fn), true) : array());
+        $data        = (file_exists($fn) ? json_decode(file_get_contents($fn), true)
+                : array());
         $data['sha'] = $repo->getCommit()->getSha();
         $tags        = array();
         foreach ($repo->getTags() as $tag) {
@@ -437,8 +436,7 @@ class Context implements SecuredAccessInterface, \Serializable
         }
         $revisions = array();
         $continue  = true;
-        $branchlog = new BranchLog($repo, $this->getRemoteBranchName(), null,
-            $limit);
+        $branchlog = new BranchLog($repo, $this->getRemoteBranchName(), null, $limit);
         foreach ($branchlog as $commit) {
             if ($continue) {
                 $rev = new Revision($commit);
@@ -472,11 +470,10 @@ class Context implements SecuredAccessInterface, \Serializable
                 $modifications[] = new Modification($this, $status, $path);
                 $fullpath        = \realpath($context->getPath().'/'.$path.$status->getName());
                 if ($recursive && file_exists($fullpath.'/.git')) {
-                    $subrepo = new Repository($fullpath,
-                        new GitBinary(strncasecmp(PHP_OS, 'WIN', 3) == 0 ? '"C:\Program Files\Git\bin\git.exe"' : null));
-                    $recurse_find($subrepo,
-                        str_replace('\\', '/',
-                            substr($fullpath, 1 + strlen($context->getPath()))).'/');
+                    $subrepo = new Repository($fullpath, new GitBinary(strncasecmp(PHP_OS, 'WIN', 3)
+                        == 0 ? '"C:\Program Files\Git\bin\git.exe"' : null));
+                    $recurse_find($subrepo, str_replace('\\', '/', substr($fullpath, 1
+                                + strlen($context->getPath()))).'/');
                 }
             }
         };
@@ -518,13 +515,8 @@ class Context implements SecuredAccessInterface, \Serializable
             if ($new_head->getSha() == $this->getRepo()->getCommit($this->branch_name)) {
                 $event .= ' TO LATEST';
             }
-            $audit = new Audit($by ?: '-', $event,
-                $old_head ? sprintf('%s @ %s - %s', $old_head->getSha(true),
-                    $old_head->getDatetimeAuthor()->format('Ymd_Hi'),
-                    $old_head->getMessage()) : null,
-                sprintf('%s @ %s - %s', $new_head->getSha(true),
-                    $new_head->getDatetimeAuthor()->format('Ymd_Hi'),
-                    $new_head->getMessage()));
+            $audit = new Audit($by ?: '-', $event, $old_head ? sprintf('%s @ %s - %s', $old_head->getSha(true), $old_head->getDatetimeAuthor()->format('Ymd_Hi'), $old_head->getMessage())
+                    : null, sprintf('%s @ %s - %s', $new_head->getSha(true), $new_head->getDatetimeAuthor()->format('Ymd_Hi'), $new_head->getMessage()));
             \fwrite($file, $audit->serialize()."\n");
             \fclose($file);
         }

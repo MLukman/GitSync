@@ -38,7 +38,15 @@
 				{% endblock %}
 
 				{% if app.isGranted('IS_AUTHENTICATED_FULLY') %}
-					<a href="{{app.securilex.getLogoutPath()}}" class="ui link item"><i class="ui sign out icon"></i>Logout</a>
+					<div class="ui dropdown item">
+						<i class="ui user icon"></i> {{app['user'].getUsername()}}
+						<i class="dropdown icon"></i>
+						<div class="menu">
+							<a class="item" href="{{app.securilex.getLogoutPath()}}">
+								<i class="ui sign out icon"></i>Logout</a>
+							</a>
+						</div>
+					</div>
 				{% elseif app.isSecurityEnabled() %}
 					<a href="{{path('login')}}" class="ui link item"><i class="ui sign in icon"></i> Login</a>
 				{% else %}

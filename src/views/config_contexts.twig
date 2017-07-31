@@ -1,0 +1,45 @@
+{% extends "content.twig" %}
+
+{% block content %}
+	<a class="ui primary button" href="{{app.path('config_context_add')}}"><i class="plus icon"></i> Add Context</a>
+	<p></p>
+	<form class="ui form {% if error is defined and error %}error{% endif %}" method="POST">
+		{% if error is defined and error %}
+			<div class="ui error message">{{error}}</div>
+		{% endif %}
+
+		<table class="ui celled striped sortable blue table">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Name</th>
+					<th>Path</th>
+					<th>Remote Name</th>
+					<th>Remote URL</th>
+					<th colspan="2">Branch</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for context in contexts %}
+					<tr>
+						<td>{{context.getId()}}</td>
+						<td>{{context.getName()}}</td>
+						<td>{{context.getPath()}}</td>
+						<td>{{context.getRemoteName()}}</td>
+						<td>{{context.getRemoteURL()}}</td>
+						<td>{{context.getBranchName()}}</td>
+						<td class="ui collapsing">
+							<div class="ui dropdown">
+								<i class="dropdown icon"></i>
+								<div class="menu">
+									<a class="item"><i class="ui delete icon"></i> Delete</a>
+								</div>
+							</div>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+
+	</form>
+{% endblock %}

@@ -32,16 +32,16 @@
 	</script>
 
 	{% if not app.isSecurityEnabled() or app.isGranted('IS_AUTHENTICATED_FULLY') %}
-		<form method="get" action="{{app.path('context_refresh_all')}}" onsubmit="$('#dimmer_refresh').dimmer('show');
+		<form id="refreshall" style="display:none" method="get" action="{{app.path('context_refresh_all')}}" onsubmit="$('#dimmer_refresh').dimmer('show');
 				return true;">
-			<input id="refreshbutton" type="submit" class="ui primary tiny button" value="Refresh All from Remote Repositories" />
 		</form>
-		<br />
+		<p></p>
+		<button class="ui primary button" onclick="$('#refreshall').submit()"><i class="refresh icon"></i> Refresh All from Remote Repositories</button>
+		<p></p>
 	{% endif %}
-
-	<div class="ui two stackable cards">
+	<div class="ui one cards" style="margin-left: -7px; margin-right: -7px">
 		{% for id,context in contexts %}
-			<a class="ui card" href="{{app.path('context_details', {'ctxid': id})}}">
+			<a class="ui blue card" href="{{app.path('context_details', {'ctxid': id})}}">
 				<div class="content">
 					<div class="header">
 						<h2>
@@ -53,14 +53,14 @@
 				<div class="content">
 					<div class="ui description">
 						{% set info = { 
-							'Local Path': context.getPath(),
-							'Remote Repository': context.getRemoteURL(), 
-							'Repository Branch': context.getBranchName() } %}
-						<div class="ui divided list">
+							'Local Path': [context.getPath(), 'folder'],
+							'Remote Repository': [context.getRemoteURL(), 'database'], 
+							'Repository Branch': [context.getBranchName(), 'fork'] } %}
+						<div class="ui divided relaxed horizontal list">
 							{% for label,value in info %}
 								<div class="item">
-									<div class="header">{{label}}</div>
-									<div class="description">{{value}}</div>
+									<i class="{{value[1]}} icon"></i>
+									{{value[0]}}
 								</div>
 							{% endfor %}
 						</div>

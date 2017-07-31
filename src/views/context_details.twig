@@ -81,13 +81,6 @@
 	</div>
 
 	<div class="ui tab active basic segment" data-tab="info">
-		{% if true or app.securilex.isGranted('prefix','context_refresh') %}
-			<form method="get" action="{{app.path('context_refresh', {'ctxid': ctxid})}}" onsubmit="$('#dimmer_refresh').dimmer('show');
-					return true;">
-				<input type="hidden" name="redirect" value="{{app.path('context_details', {'ctxid': ctxid})}}#/revisions" />
-				<input id="refreshbutton" type="submit" class="ui primary button right floated" value="Refresh from Remote Repositories" />
-			</form>
-		{% endif %}
 		{% set info = { 
 			'Local Path': context.getPath(),
 			'Remote Repository': context.getRemoteURL(), 
@@ -115,6 +108,13 @@
 	{% endif %}
 
 	<div class="ui tab basic segment" data-tab="revisions">
+		{% if true or app.securilex.isGranted('prefix','context_refresh') %}
+			<form style="padding-bottom: 10pt" method="get" action="{{app.path('context_refresh', {'ctxid': ctxid})}}" onsubmit="$('#dimmer_refresh').dimmer('show');
+					return true;">
+				<input type="hidden" name="redirect" value="{{app.path('context_details', {'ctxid': ctxid})}}#/revisions" />
+				<input id="refreshbutton" type="submit" class="ui primary button right floated" value="Refresh from Remote Repositories" />
+			</form>
+		{% endif %}
 		<p>Choose from the list of revisions below to sync with:</p>
 		<table class="ui celled striped sortable blue table" id="revisions">
 			<thead>

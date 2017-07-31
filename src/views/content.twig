@@ -5,13 +5,17 @@
 		<div class="ui dropdown item">
 			<i class="ui database icon"></i> 
 			{% if current is defined %}
-				{{current.getName()}}
-				({{current.getPath()}})
+				{% for id,context in contexts %}
+					{% if current == app.path('context_details', {ctxid: id}) %}
+						{{context.getName()}}
+						({{context.getPath()}})
+					{% endif %}
+				{% endfor %}
 			{% endif %}
 			<i class="dropdown icon"></i>
 			<div class="menu">
 				{% for id,context in contexts %}
-					<a class="item {% if current is defined and current == context %}active{% endif %}" href="{{app.path('context_details', {'ctxid': id})}}">
+					<a class="item {% if current is defined and current == app.path('context_details', {ctxid: id}) %}active{% endif %}" href="{{app.path('context_details', {'ctxid': id})}}">
 						<i class="sitemap icon"></i> 
 						{{context.getName()}}
 						({{context.getPath()}})

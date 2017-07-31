@@ -41,7 +41,7 @@ class Context extends \GitSync\Base\ContentController
         $s       = \microtime(true);
         $context = $this->getContext($ctxid);
 
-        $this->context->current = $context;
+        $this->setCurrent($this->app->path('context_details', array('ctxid' => $ctxid)));
 
         if (!$context->isInitialized()) {
             return $this->render($this->app['config']->contextInitView, array(

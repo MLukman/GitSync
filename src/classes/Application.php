@@ -4,18 +4,20 @@ namespace GitSync;
 
 include_once __DIR__.'/../constants.php';
 
-use GitSync\Controller\Auth;
-use GitSync\Provider\RootControllerProvider;
 use Monolog\Logger;
 use Securilex\Authentication\Factory\AuthenticationFactoryInterface;
+use Securilex\Authentication\User\SQLite3UserProvider;
 use Securilex\Authorization\SecuredAccessVoter;
 use Securilex\Firewall;
 use Securilex\ServiceProvider;
+use Silex\Application\UrlGeneratorTrait;
 use Silex\Provider\MonologServiceProvider;
 use Silex\Provider\ServiceControllerServiceProvider;
 use Silex\Provider\SessionServiceProvider;
 use Silex\Provider\TwigServiceProvider;
 use Silex\Provider\UrlGeneratorServiceProvider;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
 
@@ -25,8 +27,12 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
  */
 class Application extends \Silex\Application
 {
+    const AUTH_METHODS = array(
+        'password' => 'GitSync\Auth\PasswordAuthMethod',
+        'ldap' => 'GitSync\Auth\LdapAuthMethod',
+    );
 
-    use \Silex\Application\UrlGeneratorTrait;
+    use UrlGeneratorTrait;
     /**
      * The configuration
      * @var Config
@@ -43,14 +49,20 @@ class Application extends \Silex\Application
      * The firewall
      * @var Firewall
      */
-    protected $firewall = null;
+    protected $firewall     = null;
+    protected $auth_methods = array();
 
-    public function __construct(Config $config)
+    public function __construct(Config $config = null)
     {
         parent::__construct();
 
-        $app           = $this;
-        $app['config'] = $config;
+        $app = $this;
+        if ($config) {
+            $app->register($config);
+        } else {
+            $app->register(new Config());
+            $config = $app['config'];
+        }
 
         $logdir = $config->getLogDir();
         if (!is_dir($logdir) && !mkdir($logdir, 0755, true) || !is_writable($logdir)) {
@@ -71,12 +83,32 @@ class Application extends \Silex\Application
         ));
 
         /* Root controller */
-        $app->mount('/', new RootControllerProvider());
+        $app->mount('/', new Provider\RootControllerProvider());
 
         /* if .htaccess file is missing */
         if (!file_exists(GITSYNC_ROOT_DIR.'/.htaccess') && file_exists(GITSYNC_LIB_DIR.'/.htaccess')) {
             copy(GITSYNC_LIB_DIR.'/.htaccess', GITSYNC_ROOT_DIR.'/.htaccess');
         }
+    }
+
+    public function getAuthenticationMethod($id = null)
+    {
+        $methods = static::AUTH_METHODS;
+        if (empty($id)) {
+            foreach ($methods as $id => $meth) {
+                if (!isset($this->auth_methods[$id])) {
+                    $this->getAuthenticationMethod($id);
+                }
+            }
+            return $this->auth_methods;
+        } else if (isset($methods[$id])) {
+            if (!isset($this->auth_methods[$id])) {
+                $this->auth_methods[$id] = new $methods[$id]($this['config']->query('auth.params.'.$id)
+                        ?: array());
+            }
+            return $this->auth_methods[$id];
+        }
+        return null;
     }
 
     /**
@@ -100,7 +132,7 @@ class Application extends \Silex\Application
 
             /* Auth controller */
             $this['auth.controller'] = $this->share(function() {
-                return new Auth($this);
+                return new Controller\Auth($this);
             });
 
             /* Add routes */
@@ -156,5 +188,35 @@ class Application extends \Silex\Application
             }
         }
         return $contexts;
+    }
+
+    public function run(Request $request = null)
+    {
+        if (!$this->security) {
+            // activate security
+            $this['userProvider'] = new SQLite3UserProvider(new \SQLite3(GITSYNC_DATA_DIR.'config.sqlite'));
+            $this['userProvider']->setUserClass('\Securilex\Authentication\User\SimpleMutableUser');
+
+            if ($this['config']->query('setup.done') && ($method_name = $this['config']->query('auth.method'))
+                && ($auth_method = $this->getAuthenticationMethod($method_name))) {
+                $this['authMethod'] = $auth_method;
+                $authFactory        = $this['authMethod']->getAuthenticationFactory($this['config']->query('auth.params.'.$method_name));
+                $this->activateSecurity($authFactory, $this['userProvider']);
+            } else {
+                $this->before(function(Request $request, \Silex\Application $app) {
+                    if (substr($request->get('_route'), 0, 12) !== "config_setup") {
+                        return new RedirectResponse($app->path('config_setup'));
+                    }
+                });
+            }
+        }
+        parent::run($request);
+    }
+
+    static public function execute($debug = false)
+    {
+        $app          = new static();
+        $app['debug'] = $debug;
+        $app->run();
     }
 }
