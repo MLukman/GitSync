@@ -1,48 +1,67 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+	<head>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 
-  <title>{{title}}</title>
+		<title>{{title}}</title>
 
-  <link rel="stylesheet" type="text/css" href="{{baseUIPath}}ui/semantic2/semantic.css" />
+		<link rel="stylesheet" type="text/css" href="{{baseUIPath}}ui/semantic2/semantic.css" />
 
-  <script src="{{baseUIPath}}ui/jquery/jquery-2.1.3.min.js"></script>
-  <script src="{{baseUIPath}}ui/jquery/jquery.address.js"></script>
-  <script src="{{baseUIPath}}ui/semantic2/semantic.js"></script>
-  <script src="{{baseUIPath}}ui/semantic2/library/tablesort.js"></script>
-  <script>
-  $(function() {
-  	$('table.sortable').tablesort();
-  });
-  
-  </script>
-  {% for js in extra_js %}<script src="{{js}}"></script>{% endfor %}
-  {% for css in extra_css %}<link rel="stylesheet" type="text/css" href="{{css}}" />{% endfor %}
-</head>
-<body style="padding: 2em">
+		<script src="{{baseUIPath}}ui/jquery/jquery-2.1.3.min.js"></script>
+		<script src="{{baseUIPath}}ui/jquery/jquery.address.js"></script>
+		<script src="{{baseUIPath}}ui/semantic2/semantic.js"></script>
+		<script src="{{baseUIPath}}ui/semantic2/library/jquery.tablesort.js"></script>
+		<script>
+			$(function () {
+				$('table.sortable').tablesort();
+				$('.ui.dropdown').dropdown();
+			});
 
-	<a href="{{basePath}}"><img src="{{baseUIPath}}ui/gitsync-small.png" /></a>
+		</script>
+		{% for js in extra_js %}<script src="{{js}}"></script>{% endfor %}
+		{% for css in extra_css %}<link rel="stylesheet" type="text/css" href="{{css}}" />{% endfor %}
+	</head>
+	<body style="padding: 2em">
 
-	{% if app.isGranted('IS_AUTHENTICATED_FULLY') %}
-		<a href="{{app.securilex.getLogoutPath()}}" class="ui tiny button right floated"><i class="ui sign out icon"></i>Logout</a>
-	{% elseif app.isSecurityEnabled() %}
-		<a href="{{path('login')}}" class="ui tiny button right floated"><i class="ui sign in icon"></i> Login</a>
-	{% else %}
-		<div class="ui warning message">
-			<div class="header">
-				GitSync is insecure!
+		<div id="topbar" class="ui fixed menu navbar" style="letter-spacing: 0.75pt; background-color: skyblue; box-shadow: inset 0px -3pt 0px rgba(127,127,255,0.5);">
+			<div class="brand title item" style="padding-right: 30pt">
+				<a href="{{basePath}}"><img src="{{baseUIPath}}ui/gitsync-small.png" /></a>
 			</div>
-			Anyone can access your GitSync. Please configure a security provider to secure access. Refer README on your server or GitHub.
+
+			{% block menubar %}
+			{% endblock %}
+
+			<div class="right menu">
+				{% block menuright %}
+				{% endblock %}
+
+				{% if app.isGranted('IS_AUTHENTICATED_FULLY') %}
+					<div class="ui dropdown item">
+						<i class="ui user icon"></i> {{app['user'].getUsername()}}
+						<i class="dropdown icon"></i>
+						<div class="menu">
+							<a class="item" href="{{app.securilex.getLogoutPath()}}">
+								<i class="ui sign out icon"></i>Logout</a>
+							</a>
+						</div>
+					</div>
+				{% elseif app.isSecurityEnabled() %}
+					<a href="{{path('login')}}" class="ui link item"><i class="ui sign in icon"></i> Login</a>
+				{% else %}
+					<span class="ui item"><i class="ui unlock icon"></i> Insecure</span>
+				{% endif %}
+			</div>
 		</div>
-	{% endif %}
+		<div style="height: 48px"></div>
 
-	{{content|raw}}
+		{% block content %}
+			{{content|raw}}
+		{% endblock %}
 
-	<div style="margin: 2em 0em; border-top: 1px solid silver">Powered by GitSync
-	(<a href="https://github.com/MLukman/GitSync">https://github.com/MLukman/GitSync</a>)</div>
+		<div style="margin: 2em 0em; border-top: 1px solid silver">Powered by GitSync
+			(<a href="https://github.com/MLukman/GitSync">https://github.com/MLukman/GitSync</a>)</div>
 
-</body>
+	</body>
 </html>

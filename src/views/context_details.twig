@@ -1,127 +1,172 @@
 {% import "macros.twig" as m %}
 
-<script>
-	$(function() {
-		$('#pagetab.menu .item').tab({
-			history: true,
-			historyType: 'hash'
-		});
-	});
-</script>
+{% extends "content.twig" %}
 
-<h1 class="ui header">
-	<i class="sitemap icon"></i>
-	<div class="content">{{context.getName()}} [{{context.getPath()}}]</div>
-</h1>
+{% block content %}
+	<script>
+		var formatDate = (d, f) => f.replace(/{(.+?):?(\d*)}/g, (v, c, p) => {
+				for (v = d["get" + c]() + /h/.test(c) + ""; v.length < p; v = 0 + v)
+					;
+				return v
+			});
+		$(function () {
+			$('#pagetab.menu .item').tab({
+				history: true,
+				historyType: 'hash'
+			});
+			$('#revisions thead').hide();
+			var revisions = $('#revisions tbody');
+			revisions.append($('<tr />').append($('<td colspan="5" style="font-size: 200%; text-align: center" />').text('Loading ...')));
+			$.ajax('{{app.path('context_revisions', {'ctxid': ctxid})}}', {
+				success: function (data, status, xhr) {
+					var syncurl = "{{app.path('context_presync', {'ctxid': ctxid, 'ref': '__ref__'})}}";
+					$('#revisions thead').show();
+					revisions.empty();
+					for (var i = 0; i < data.length; i++) {
+						var tr = $('<tr />');
+						if (data[i].active) {
+							tr.addClass('active');
+						}
+						var timestamp = new Date(data[i].timestamp * 1000);
+						tr.append($('<td class="collapsing" />').text(formatDate(timestamp, "{FullYear}-{Month:2}-{Date:2} {Hours:2}:{Minutes:2}:{Seconds:2}")));
+						var ref = $('<td class="center aligned collapsing" />');
+						if (data[i].tags.length > 0) {
+							for (var j = 0; j < data[i].tags.length; j++) {
+								ref.append($('<span class="ui blue tag label" />').text(data[i].tags[j]));
+							}
+						} else {
+							ref.text(data[i].sha);
+						}
+						tr.append(ref);
+						tr.append($('<td />').text(data[i].committer));
+		{% if true or app.securilex.isGranted('prefix','context_presync') %}
+							tr.append($('<td />').text(data[i].message));
+							var sync = $('<td class="ui center aligned collapsing" / >');
+							if (data[i].active && !data[i].dirty) {
+								sync.append($('<i class="ui check square icon" />'));
+								sync.append('OK');
+							} else {
+								sync.append($('<a href="' + syncurl.replace('__ref__', data[i].ref) + '" class="ui button" />').append('Sync'));
+							}
+							tr.append(sync);
+		{% else %}
+							tr.append($('<td colspan="2" />').text(data[i].message));
+		{% endif %}
+							revisions.append(tr);
+						}
+					}
+				});
+			}
+			);
+	</script>
 
-<form method="get" action="{{app.path('context_refresh', {'ctxid': ctxid})}}" onsubmit="$('#dimmer_refresh').dimmer('show'); return true;">
-	<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
-	<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranchName()}}</div>
-	{% if context.isDirty() %}
-	<div class="ui red label"><i class="warning sign icon"></i>Unsync</div>
-	{% endif %}
-	{% if not context.isLatest() %}
-	<div class="ui orange label"><i class="warning sign icon"></i>Outdated</div>
-	{% endif %}
-	<input type="hidden" name="redirect" value="{{app.path('context_details', {'ctxid': ctxid})}}#/revisions" />
-	<input id="refreshbutton" type="submit" class="ui primary tiny button right floated" value="Refresh from Remote Repositories" />
-</form>
+	{% set unsync = (modifications|length > 0) %}
 
-{% set unsync = (modifications|length > 0) %}
-
-<div class="ui secondary segment">
-<div id="pagetab" class="ui top attached tabular large menu">
-	{% if unsync %}
-	<a class="active item" data-tab="unsync">Unsync <span class="ui red circular tiny label">{{modifications|length}}</span></a>
-	{% endif %}
-	<a class="{% if not unsync %}active {% endif %}item" data-tab="revisions">Revisions</a>
-	{% if auditlog %}
-	<a class="item" data-tab="auditlog">Audit Log</a>
-	{% endif %}
-</div>
-
-{% if unsync %}
-<div class="ui bottom attached active tab segment" data-tab="unsync">
-	<p>The following direct modifications to files have been found:</p>
-	{{ m.modificationTable(modifications) }}
-</div>
-{% endif %}
-
-<div class="ui bottom attached tab segment{% if not unsync %} active{% endif %}" data-tab="revisions">
-	<p>Choose from the list of revisions below to sync with:</p>
-	<table class="ui celled striped sortable blue table">
-		<thead>
-			<tr>
-				<th>Timestamp</th>
-				<th>Tag/SHA</th>
-				<th>Committer</th>
-				<th colspan="2">Message</th>
-			</tr>
-		</thead>
-		<tbody>
-		{% for revision in revisions %}
-			{% if revision.getSHA() %}
-			<tr{% if revision.getCommit().getSHA() == head.getSHA() %} class="active"{% endif %}>
-				<td class="collapsing">{{revision.getDate().format('Y-m-d H:i:s')}}</td>
-				<td class="center aligned collapsing">
-				{% for tag in revision.getTags() %}<span class="ui blue tag label">{{tag}}</span>
-				{% else %}{{revision.getSHA(true)}}
-				{% endfor %}
-				</td>
-				<td>{{revision.getCommitter().getName()}}</td>
-				<td>{{revision.getMessage()}}</td>
-				<td class="ui center aligned collapsing">
-					{% if revision.getCommit() == head and not context.isDirty() %}
-					<i class="ui check square icon"></i>OK
-					{% else %}
-					<a href="{{app.path('context_presync', {'ctxid': ctxid, 'ref': revision.getRef()|url_encode})}}" class="ui button">Sync</a>
-					{% endif %}</td>
-			</tr>
-			{% else %}
-			<tr><td colspan="4">Unable to load revision details -- something is wrong!</td></tr>
+	<div id="pagetab" class="ui pointing menu large">
+		<a class="{% if not unsync %}active {% endif %} item" data-tab="info">Info
+			{% if context.isDirty() %}
+				<div class="ui red label"><i class="warning sign icon"></i>Unsync</div>
 			{% endif %}
-		{% endfor %}
-		</tbody>
-	</table>
-</div>
+			{% if not context.isLatest() %}
+				<div class="ui orange label"><i class="warning sign icon"></i>Outdated</div>
+			{% endif %}
+		</a>
+		{% if unsync %}
+			<a class="active item" data-tab="unsync">Unsync <span class="ui red circular tiny label">{{modifications|length}}</span></a>
+			{% endif %}
+		<a class="item" data-tab="revisions">Revisions</a>
+		{% if auditlog %}
+			<a class="item" data-tab="auditlog">Audit Log</a>
+		{% endif %}
+	</div>
 
-{% if auditlog %}
-<div class="ui bottom attached tab segment" data-tab="auditlog">
-	<p>The following events have occurred via GitSync:</p>
-	<table class="ui celled striped sortable orange table">
-		<thead>
-			<tr>
-				<th>Timestamp</th>
-				<th>Event</th>
-				<th>From</th>
-				<th>To</th>
-				<th>By</th>
-			</tr>
-		</thead>
-		<tbody>
-		{% for audit in auditlog %}
-			<tr>
-				<td class="collapsing">{{audit.datetime.format('Y-m-d H:i:s')}}</td>
-				<td class="collapsing">{{audit.event}}</td>
-				<td{% if audit.from == audit.to or not audit.from %} colspan="2"{% endif %}>{{audit.from ?: audit.to}}</td>
-				{% if audit.from != audit.to and audit.from %}<td>{{audit.to}}</td>{% endif %}
-				<td class="collapsing">{{audit.uid}}</td>
-			</tr>
-		{% endfor %}
-		</tbody>
-	</table>
-</div>
-{% endif %}
-</div>
-
-<div id="dimmer_refresh" class="ui page dimmer">
-	<div class="content">
-		<div class="center">
-			<h2 class="ui inverted icon header">
-				<i class="refresh icon"></i>
-				Refresh in progress
-				<div class="sub header">Please wait for a while ...</div>
-			</h2>
+	<div class="ui tab active basic segment" data-tab="info">
+		{% set info = { 
+			'Local Path': context.getPath(),
+			'Remote Repository': context.getRemoteURL(), 
+			'Repository Branch': context.getBranchName(), 
+			'Current Revision': head.getMessage(),
+			'Revision Date': head.getDatetimeCommitter().format('Y-m-d H:i:s') } %}
+		<div class="ui large relaxed divided list">
+			{% for label,value in info %}
+				<div class="item">
+					<i class="right triangle icon"></i>
+					<div class="content">					
+						<div class="header">{{label}}</div>
+						<div class="description">{{value}}</div>
+					</div>
+				</div>
+			{% endfor %}
 		</div>
 	</div>
-</div>
+
+	{% if unsync %}
+		<div class="ui tab basic segment" data-tab="unsync">
+			<p>The following direct modifications to files have been found:</p>
+			{{ m.modificationTable(modifications) }}
+		</div>
+	{% endif %}
+
+	<div class="ui tab basic segment" data-tab="revisions">
+		{% if true or app.securilex.isGranted('prefix','context_refresh') %}
+			<form style="padding-bottom: 10pt" method="get" action="{{app.path('context_refresh', {'ctxid': ctxid})}}" onsubmit="$('#dimmer_refresh').dimmer('show');
+					return true;">
+				<input type="hidden" name="redirect" value="{{app.path('context_details', {'ctxid': ctxid})}}#/revisions" />
+				<input id="refreshbutton" type="submit" class="ui primary button right floated" value="Refresh from Remote Repositories" />
+			</form>
+		{% endif %}
+		<p>Choose from the list of revisions below to sync with:</p>
+		<table class="ui celled striped sortable blue table" id="revisions">
+			<thead>
+				<tr>
+					<th>Timestamp</th>
+					<th>Tag/SHA</th>
+					<th>Committer</th>
+					<th colspan="2">Message</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</div>
+
+	{% if auditlog %}
+		<div class="ui tab basic segment" data-tab="auditlog">
+			<p>The following events have occurred via GitSync:</p>
+			<table class="ui celled striped sortable orange table">
+				<thead>
+					<tr>
+						<th>Timestamp</th>
+						<th>Event</th>
+						<th>From</th>
+						<th>To</th>
+						<th>By</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for audit in auditlog %}
+						<tr>
+							<td class="collapsing">{{audit.datetime.format('Y-m-d H:i:s')}}</td>
+							<td class="collapsing">{{audit.event}}</td>
+							<td{% if audit.from == audit.to or not audit.from %} colspan="2"{% endif %}>{{audit.from ?: audit.to}}</td>
+							{% if audit.from != audit.to and audit.from %}<td>{{audit.to}}</td>{% endif %}
+							<td class="collapsing">{{audit.uid}}</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	{% endif %}
+
+	<div id="dimmer_refresh" class="ui page dimmer">
+		<div class="content">
+			<div class="center">
+				<h2 class="ui inverted icon header">
+					<i class="refresh icon"></i>
+					Refresh in progress
+					<div class="sub header">Please wait for a while ...</div>
+				</h2>
+			</div>
+		</div>
+	</div>
+{% endblock %}

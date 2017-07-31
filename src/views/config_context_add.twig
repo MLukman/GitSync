@@ -1,0 +1,57 @@
+{% extends "content.twig" %}
+
+{% block content %}
+	<h1 class="header">Add Context</h1>
+
+	<form class="ui segment form {% if error is defined and error %}error{% endif %}" method="POST">
+		{% if error is defined and error %}
+			<div class="ui error message">{{error}}</div>
+		{% endif %}
+		{% if not step is defined or step == 0 %}
+			<h4 class="ui dividing header">Context Path</h4>
+			<div class="field">
+				<label>Path</label>
+				<input type="text" name="path" value="{{path}}" placeholder="Absolute path to the local directory (must already exist and has already been setup with git remote repo)" />
+			</div>
+		{% else %}
+			<h4 class="ui dividing header">Context Path: {{path}}</h4>
+			<div class="ui list">
+				<div class="item">
+					<i class="right triangle icon"></i>
+					<div class="content">					
+						<div class="header">ID</div>
+						<div class="description">{{repo['id']}}</div>
+					</div>
+				</div>
+				<div class="item">
+					<i class="right triangle icon"></i>
+					<div class="content">					
+						<div class="header">Remote Name</div>
+						<div class="description">{{repo['remote']}}</div>
+					</div>
+				</div>
+				<div class="item">
+					<i class="right triangle icon"></i>
+					<div class="content">					
+						<div class="header">Remote URL</div>
+						<div class="description">{{repo['url']}}</div>
+					</div>
+				</div>
+				<div class="item">
+					<i class="right triangle icon"></i>
+					<div class="content">					
+						<div class="header">Branch Name</div>
+						<div class="description">{{repo['branch']}}</div>
+					</div>
+				</div>
+			</div>
+			<input type="hidden" name="path" value="{{path}}" />
+		{% endif %}
+
+		{% if step is defined and step > 0 %}
+			<input class="ui button" type="button" value="Back" onclick="javascript:window.history.back()" />
+		{% endif %}
+		<input class="ui primary button" type="submit" value="Next" />
+		<input type="hidden" name="step" value="{{step|default(0)}}" />
+	</form>
+{% endblock %}

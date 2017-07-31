@@ -4,7 +4,7 @@ namespace GitSync;
 
 include_once __DIR__.'/../constants.php';
 
-class Config
+class Config implements \Silex\ServiceProviderInterface
 {
     /**
      * Contexts to be managed
@@ -53,6 +53,34 @@ class Config
      * @var string
      */
     protected $logdir = GITSYNC_ROOT_DIR.'/logs';
+
+    /**
+     * \SQLite3
+     * @var \SQLite3
+     */
+    protected $sqlite       = null;
+    protected $queries      = array();
+    protected $select_query = null;
+    protected $update_query = null;
+    protected $delete_query = null;
+
+    public function __construct()
+    {
+        if (!file_exists(GITSYNC_DATA_DIR)) {
+            mkdir(GITSYNC_DATA_DIR, 0750, true);
+        }
+        $this->sqlite = new \SQLite3(GITSYNC_DATA_DIR.'config.sqlite');
+        $this->sqlite->exec("CREATE TABLE IF NOT EXISTS config (cfg_key TEXT CONSTRAINT config_pk PRIMARY KEY NOT NULL, cfg_val TEXT NULL)");
+        $this->sqlite->exec("CREATE TABLE IF NOT EXISTS contexts (id TEXT CONSTRAINT context_pk PRIMARY KEY NOT NULL, path TEXT UNIQUE NOT NULL, remote_url TEXT NOT NULL, branch TEXT, remote_name TEXT, name TEXT)");
+    }
+
+    public function __destruct()
+    {
+        if ($this->sqlite) {
+            $this->sqlite->close();
+            $this->sqlite = null;
+        }
+    }
 
     /**
      * Add context
@@ -106,5 +134,80 @@ class Config
     public function saveContextsToFile($fullfilepath)
     {
         return (file_put_contents($fullfilepath, serialize($this->contexts)) > 0);
+    }
+
+    public function query($key)
+    {
+        if (!isset($this->queries['cfg.select'])) {
+            $this->queries['cfg.select'] = $this->sqlite->prepare("SELECT cfg_val FROM config WHERE cfg_key = :key");
+        }
+        $this->queries['cfg.select']->bindValue(':key', $key);
+        if (($result = $this->queries['cfg.select']->execute()->fetchArray(SQLITE3_ASSOC))) {
+            return unserialize($result['cfg_val']);
+        }
+        return null;
+    }
+
+    public function update($key, $val)
+    {
+        if (!isset($this->queries['cfg.update'])) {
+            $this->queries['cfg.update'] = $this->sqlite->prepare("INSERT OR REPLACE INTO config (cfg_key, cfg_val) VALUES (:key, :val)");
+        }
+        $this->queries['cfg.update']->bindValue(':key', $key);
+        $this->queries['cfg.update']->bindValue(':val', serialize($val));
+        $this->queries['cfg.update']->execute();
+    }
+
+    public function delete($key)
+    {
+        if (!isset($this->queries['cfg.delete'])) {
+            $this->queries['cfg.delete'] = $this->sqlite->prepare("DELETE FROM config WHERE cfg_key = :key");
+        }
+        $this->queries['cfg.delete']->bindValue(':key', $key);
+        $this->queries['cfg.delete']->execute();
+    }
+
+    public function boot(\Silex\Application $app)
+    {
+        if (!isset($this->queries['ctx.select.all'])) {
+            $this->queries['ctx.select.all'] = $this->sqlite->prepare("SELECT * FROM contexts");
+        }
+        $query  = $this->queries['ctx.select.all']->execute();
+        while ($result = $query->fetchArray(SQLITE3_ASSOC)) {
+            $this->addContext(new Context($result['path'], $result['remote_url'], $result['branch']
+                        ?: 'master', $result['remote_name'] ?: 'origin', $result['id'], $result['name']));
+        }
+    }
+
+    public function register(\Silex\Application $app)
+    {
+        $app['config'] = $this;
+    }
+
+    public function saveContext($path, $remote_url, $branch = master,
+                                $remote_name = 'origin', $id = null,
+                                $name = null)
+    {
+        $id = $id ?: basename($path);
+        if (!isset($this->queries['ctx.insert'])) {
+            $this->queries['ctx.insert'] = $this->sqlite->prepare("INSERT OR REPLACE INTO contexts (path, remote_url, branch, remote_name, id, name) VALUES (:path, :remote_url, :branch, :remote_name, :id, :name)");
+        }
+        $this->queries['ctx.insert']->bindValue(':path', $path);
+        $this->queries['ctx.insert']->bindValue(':remote_url', $remote_url);
+        $this->queries['ctx.insert']->bindValue(':remote_name', $remote_name);
+        $this->queries['ctx.insert']->bindValue(':branch', $branch);
+        $this->queries['ctx.insert']->bindValue(':id', $id);
+        $this->queries['ctx.insert']->bindValue(':name', $name ?: $id);
+        $this->queries['ctx.insert']->execute();
+    }
+
+    public function getContextByPath($path)
+    {
+        foreach ($this->contexts as $context) {
+            if ($context->getPath() == $path) {
+                return $context;
+            }
+        }
+        return null;
     }
 }

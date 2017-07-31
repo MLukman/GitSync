@@ -1,44 +1,84 @@
-<h1 class="ui header">
-	<i class="database icon"></i>
-	<div class="content">All contexts</div>
-</h1>
+{% extends "content.twig" %}
 
-{% if not app.isSecurityEnabled() or app.isGranted('IS_AUTHENTICATED_FULLY') %}
-<form method="get" action="{{app.path('context_refresh_all')}}" onsubmit="$('#dimmer_refresh').dimmer('show'); return true;">
-	<input id="refreshbutton" type="submit" class="ui primary tiny button" value="Refresh All Contexts from Remote Repositories" />
-</form>
-{% endif %}
+{% block content %}
+	<script>
+		$(function () {
+			$.ajax('{{app.path('context_status_all')}}', {
+				success: function (data, status, xhr) {
+					for (var ctx in data) {
+						var el = $('#status_' + ctx);
+						el.empty();
+						if (!data[ctx].init) {
+							el.addClass('red');
+							el.append($('<i class="warning sign icon" />'));
+							el.append($('<span>Not a Git repo</span>'));
+						} else if (data[ctx].dirty) {
+							el.addClass('red');
+							el.append($('<i class="warning sign icon" />'));
+							el.append($('<span>Unsync</span>'));
+						} else if (!data[ctx].latest) {
+							el.addClass('orange');
+							el.append($('<i class="warning sign icon" />'));
+							el.append($('<span>Outdated</span>'));
+						} else {
+							el.addClass('green');
+							el.append($('<i class="check circle icon" />'));
+							el.append($('<span>OK</span>'));
+						}
+					}
+				}
+			});
+		});
+	</script>
 
-{% for id,context in contexts %}
-<div class="ui item stacked segment">
-	<h2 class="header">
-		<a href="{{app.path('context_details', {'ctxid': id})}}">{{context.getName()}}</a>
-	</h2>
-	<div class="ui description">
-		<p>{{context.getPath}}</p>
-		<div class="ui basic blue label"><i class="database icon"></i>{{context.getRemoteURL()}}</div>
-		<div class="ui basic blue label"><i class="fork icon"></i>{{context.getBranchName()}}</div>
-	</div>
-	{% if not context.isInitialized() %}
-	<div class="ui red top right attached label"><i class="warning sign icon"></i>Not a Git repo</div>
-	{% elseif context.isDirty() %}
-	<div class="ui red top right attached label"><i class="warning sign icon"></i>Unsync</div>
-	{% elseif not context.isLatest() %}
-	<div class="ui orange top right attached label"><i class="warning sign icon"></i>Outdated</div>
-	{% else %}
-	<div class="ui green top right attached label"><i class="check circle icon"></i>OK</div>
+	{% if not app.isSecurityEnabled() or app.isGranted('IS_AUTHENTICATED_FULLY') %}
+		<form id="refreshall" style="display:none" method="get" action="{{app.path('context_refresh_all')}}" onsubmit="$('#dimmer_refresh').dimmer('show');
+				return true;">
+		</form>
+		<p></p>
+		<button class="ui primary button" onclick="$('#refreshall').submit()"><i class="refresh icon"></i> Refresh All from Remote Repositories</button>
+		<p></p>
 	{% endif %}
-</div>
-{% endfor %}
+	<div class="ui one cards" style="margin-left: -7px; margin-right: -7px">
+		{% for id,context in contexts %}
+			<a class="ui blue card" href="{{app.path('context_details', {'ctxid': id})}}">
+				<div class="content">
+					<div class="header">
+						<h2>
+							<div class="ui right floated label" id="status_{{context.getId}}">Checking ...</div>
+							<i class="ui sitemap icon"></i> {{context.getName()}}
+						</h2>
+					</div>
+				</div>
+				<div class="content">
+					<div class="ui description">
+						{% set info = { 
+							'Local Path': [context.getPath(), 'folder'],
+							'Remote Repository': [context.getRemoteURL(), 'database'], 
+							'Repository Branch': [context.getBranchName(), 'fork'] } %}
+						<div class="ui divided relaxed horizontal list">
+							{% for label,value in info %}
+								<div class="item">
+									<i class="{{value[1]}} icon"></i>
+									{{value[0]}}
+								</div>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			</a>
+		{% endfor %}
+	</div>
 
-<div id="dimmer_refresh" class="ui page dimmer">
-	<div class="content">
-		<div class="center">
-			<h2 class="ui inverted icon header">
-				<i class="refresh icon"></i>
-				Refresh in progress
-				<div class="sub header">Please wait for a while ...</div>
-			</h2>
+	<div id="dimmer_refresh" class="ui page dimmer">
+		<div class="content">
+			<div class="center">
+				<h2 class="ui inverted icon header">
+					<i class="refresh icon"></i>
+					Refresh in progress
+					<div class="sub header">Please wait for a while ...</div>
+				</h2>
+			</div>
 		</div>
 	</div>
-</div>
+{% endblock %}

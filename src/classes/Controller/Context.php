@@ -2,11 +2,14 @@
 
 namespace GitSync\Controller;
 
-use Symfony\Component\HttpFoundation\Request;
+use GitSync\Revision;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
-class Context extends \GitSync\Base\Controller
+class Context extends \GitSync\Base\ContentController
 {
 
     public function __construct(\GitSync\Application $app)
@@ -17,54 +20,75 @@ class Context extends \GitSync\Base\Controller
 
     public function index(Request $request)
     {
-        return $this->renderDisplay($this->app['config']->contextIndexView,
-                array(
-                'contexts' => $this->getAllContexts(),
-        ));
+        return $this->render($this->app['config']->contextIndexView);
+    }
+
+    public function status(Request $request)
+    {
+        $outputs = array();
+        foreach ($this->getAllContexts() as $context) {
+            $outputs[$context->getId()] = array(
+                'init' => $context->isInitialized(),
+                'dirty' => $context->isDirty(),
+                'latest' => $context->isLatest(),
+            );
+        }
+        return new JsonResponse($outputs);
     }
 
     public function details(Request $request, $ctxid)
     {
+        $s       = \microtime(true);
         $context = $this->getContext($ctxid);
 
+        $this->setCurrent($this->app->path('context_details', array('ctxid' => $ctxid)));
+
         if (!$context->isInitialized()) {
-            return $this->renderDisplay($this->app['config']->contextInitView,
-                    array(
+            return $this->render($this->app['config']->contextInitView, array(
                     'ctxid' => $ctxid,
                     'path' => $context->getPath(),
             ));
         }
 
-        $repo      = $context->getRepo();
-        $head      = $context->getHead();
-        $revisions = $context->getLatestRevisions();
-        $auditlog  = $context->getAuditLog();
-
-
-        /* If HEAD is not in the list of revisions (most probably due to the directory
-         * is on a different branch) then add HEAD to the top of the list
-         */
-        $showHead = true;
-        foreach ($revisions as $rev) {
-            if ($rev->getCommit()->getSha() == $head->getSha()) {
-                $showHead = false;
-                break;
-            }
-        }
-        if ($showHead) {
-            array_unshift($revisions, new \GitSync\Revision($head));
-        }
+        $head = $context->getHead();
+        //print \microtime(true) - $s; exit;
 
         /* Display */
-        return $this->renderDisplay($this->app['config']->contextDetailsView,
-                array(
+        return $this->render($this->app['config']->contextDetailsView, array(
                 'ctxid' => $ctxid,
                 'context' => $context,
                 'head' => $head,
                 'modifications' => $context->getModifications(true),
-                'revisions' => $revisions,
-                'auditlog' => $auditlog,
+                'auditlog' => $context->getAuditLog(),
         ));
+    }
+
+    public function revisions(Request $request, $ctxid)
+    {
+        $outputs   = array();
+        $context   = $this->getContext($ctxid);
+        $head      = $context->getHead();
+        $revisions = $context->getLatestRevisions();
+
+        $dirty   = $context->isDirty();
+        $headSHA = $head->getSha();
+        array_unshift($revisions, new Revision($head));
+
+        foreach ($revisions as $rev) {
+            $sha           = $rev->getCommit()->getSha();
+            $outputs[$sha] = array(
+                'active' => ($sha == $headSHA),
+                'timestamp' => $rev->getDate()->getTimestamp(),
+                'ref' => $rev->getRef(),
+                'tags' => $rev->getTags(),
+                'sha' => $rev->getSHA(true),
+                'committer' => $rev->getCommitter()->getName(),
+                'message' => $rev->getMessage()->getFullMessage(),
+                'dirty' => $dirty,
+            );
+        }
+
+        return new JsonResponse(array_values($outputs));
     }
 
     public function refresh(Request $request, $ctxid)
@@ -72,8 +96,8 @@ class Context extends \GitSync\Base\Controller
         if (($context = $this->getContext($ctxid))) {
             $context->fetch();
         }
-        return new RedirectResponse($request->query->get('redirect') ? : $this->app->path('context_details',
-                    array('ctxid' => $ctxid)));
+        return new RedirectResponse($request->query->get('redirect') ?: $this->app->path('context_details', array(
+                'ctxid' => $ctxid)));
     }
 
     public function refreshAll(Request $request)
@@ -90,8 +114,7 @@ class Context extends \GitSync\Base\Controller
     {
         $context = $this->getContext($ctxid);
         $diff    = $context->getRepo()->getDiff($ref, 'HEAD');
-        return $this->renderDisplay($this->app['config']->contextPresyncView,
-                array(
+        return $this->render($this->app['config']->contextPresyncView, array(
                 'ctxid' => $ctxid,
                 'ref' => $ref,
                 'context' => $context,
@@ -104,15 +127,14 @@ class Context extends \GitSync\Base\Controller
     {
         $context = $this->getContext($ctxid);
         $context->checkout($ref, $this->app->uid());
-        return new RedirectResponse($request->request->get('redirect') ? : $this->app->path('context_details',
-                    array('ctxid' => $ctxid)));
+        return new RedirectResponse($request->request->get('redirect') ?: $this->app->path('context_details', array(
+                'ctxid' => $ctxid)));
     }
 
     public function init(Request $request, $ctxid)
     {
         $this->getContext($ctxid)->initialize($this->app->uid());
-        return new RedirectResponse($this->app->path('context_details',
-                array('ctxid' => $ctxid)));
+        return new RedirectResponse($this->app->path('context_details', array('ctxid' => $ctxid)));
     }
 
     /**
@@ -127,19 +149,8 @@ class Context extends \GitSync\Base\Controller
             throw new NotFoundHttpException();
         }
         if (!$skip_security && !$context->checkAccess($this->app)) {
-            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException();
+            throw new AccessDeniedException();
         }
         return $context;
-    }
-
-    protected function getAllContexts()
-    {
-        $contexts = array();
-        foreach ($this->app['config']->getContexts() as $context) {
-            if ($context->checkAccess($this->app)) {
-                $contexts[$context->getId()] = $context;
-            }
-        }
-        return $contexts;
     }
 }

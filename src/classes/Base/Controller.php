@@ -20,8 +20,8 @@ class Controller
     {
         $this->app = $app;
         //$this->page_title = \GitSync\Config::$default_page_title;
-        $subpath   = str_replace("\\", "/",
-            substr(GITSYNC_LIB_DIR, strlen(GITSYNC_ROOT_DIR) + 1));
+        $subpath   = str_replace("\\", "/", substr(GITSYNC_LIB_DIR, strlen(GITSYNC_ROOT_DIR)
+                + 1));
         $basePath  = $app->path(GITSYNC_ROOT_ROUTE);
 
         $this->context              = new \stdClass();
@@ -70,12 +70,12 @@ class Controller
 
     public function addJS($file, $tag = null)
     {
-        $this->context->extra_js[$tag ? : $file] = $file;
+        $this->context->extra_js[$tag ?: $file] = $file;
     }
 
     public function addCSS($file, $tag = null)
     {
-        $this->context->extra_css[$tag ? : $file] = $file;
+        $this->context->extra_css[$tag ?: $file] = $file;
     }
 
     public function __get($name)

@@ -1,0 +1,47 @@
+{% extends "base.twig" %}
+
+{% block menubar %}
+	{% if contexts is defined and contexts|length > 0 %}
+		<div class="ui dropdown item">
+			<i class="ui database icon"></i> 
+			{% if current is defined %}
+				{% for id,context in contexts %}
+					{% if current == app.path('context_details', {ctxid: id}) %}
+						{{context.getName()}}
+						({{context.getPath()}})
+					{% endif %}
+				{% endfor %}
+			{% endif %}
+			<i class="dropdown icon"></i>
+			<div class="menu">
+				{% for id,context in contexts %}
+					<a class="item {% if current is defined and current == app.path('context_details', {ctxid: id}) %}active{% endif %}" href="{{app.path('context_details', {'ctxid': id})}}">
+						<i class="sitemap icon"></i> 
+						{{context.getName()}}
+						({{context.getPath()}})
+					</a>
+				{% endfor %}
+			</div>
+		</div>
+	{% endif %}
+	{% if not app.isSecurityEnabled() or app.isGranted('ROLE_ADMIN') %}
+		{% set menus = { 
+			(app.path('config_contexts')): ['Manage Contexts', 'sitemap'], 
+			(app.path('config_users')): ['Manage Users', 'users']
+		} %}
+		<div class="ui dropdown item">
+			<i class="ui setting icon"></i> 
+			{% if current is defined and menus[current] is defined %}
+				{{menus[current][0]}}
+			{% endif %}
+			<i class="dropdown icon"></i>
+			<div class="menu">
+				{% for path,menu in menus %}
+					<a class="item {% if current is defined and current == path %}active{% endif %}" href="{{path}}">
+						<i class="{{menu[1]}} icon"></i> {{menu[0]}}
+					</a>
+				{% endfor %}
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}
