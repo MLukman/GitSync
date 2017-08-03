@@ -18,13 +18,16 @@
 			var revisions = $('#revisions tbody');
 			revisions.append($('<tr />').append($('<td colspan="5" style="font-size: 200%; text-align: center" />').text('Loading ...')));
 			$.ajax('{{app.path('context_revisions', {'ctxid': ctxid})}}', {
-				success: function (data, status, xhr) {
+				success: function (result, status, xhr) {
 					var syncurl = "{{app.path('context_presync', {'ctxid': ctxid, 'ref': '__ref__'})}}";
 					$('#revisions thead').show();
 					revisions.empty();
+					data = result.revisions;
 					for (var i = 0; i < data.length; i++) {
 						var tr = $('<tr />');
-						if (data[i].active) {
+						if (!data[i].inbranch) {
+							tr.addClass('negative');
+						} else if (data[i].active) {
 							tr.addClass('active');
 						}
 						var timestamp = new Date(data[i].timestamp * 1000);
@@ -42,9 +45,12 @@
 		{% if true or app.securilex.isGranted('prefix','context_presync') %}
 							tr.append($('<td />').text(data[i].message));
 							var sync = $('<td class="ui center aligned collapsing" / >');
-							if (data[i].active && !data[i].dirty) {
-								sync.append($('<i class="ui check square icon" />'));
-								sync.append('OK');
+							if (data[i].active && !result.dirty) {
+								if (!data[i].inbranch || !result.latest) {
+									sync.append($('<div class="ui orange label"><i class="warning sign icon"></i>Outdated</div>'));
+								} else {
+									sync.append($('<div class="ui label green"><i class="check circle icon"></i>OK</div>'));
+								}
 							} else {
 								sync.append($('<a href="' + syncurl.replace('__ref__', data[i].ref) + '" class="ui button" />').append('Sync'));
 							}
@@ -116,7 +122,7 @@
 			</form>
 		{% endif %}
 		<p>Choose from the list of revisions below to sync with:</p>
-		<table class="ui celled striped sortable blue table" id="revisions">
+		<table class="ui selectable celled striped sortable blue table" id="revisions">
 			<thead>
 				<tr>
 					<th>Timestamp</th>

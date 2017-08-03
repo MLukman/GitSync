@@ -450,7 +450,7 @@ class Context implements SecuredAccessInterface, \Serializable
                         $rev->addTag($tagname);
                     }
                 }
-                $revisions[] = $rev;
+                $revisions[$sha] = $rev;
             }
         }
         return $revisions;

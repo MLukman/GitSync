@@ -68,27 +68,40 @@ class Context extends \GitSync\Base\ContentController
         $outputs   = array();
         $context   = $this->getContext($ctxid);
         $head      = $context->getHead();
+        $latest    = $context->isLatest();
         $revisions = $context->getLatestRevisions();
 
         $dirty   = $context->isDirty();
         $headSHA = $head->getSha();
-        array_unshift($revisions, new Revision($head));
 
+        $revToArray = (function (Revision $rev) {
+                return array(
+                    'timestamp' => $rev->getDate()->getTimestamp(),
+                    'ref' => $rev->getRef(),
+                    'tags' => $rev->getTags(),
+                    'sha' => $rev->getSHA(true),
+                    'committer' => $rev->getCommitter()->getName(),
+                    'message' => $rev->getMessage()->getFullMessage(),
+                );
+            });
         foreach ($revisions as $rev) {
-            $sha           = $rev->getCommit()->getSha();
-            $outputs[$sha] = array(
-                'active' => ($sha == $headSHA),
-                'timestamp' => $rev->getDate()->getTimestamp(),
-                'ref' => $rev->getRef(),
-                'tags' => $rev->getTags(),
-                'sha' => $rev->getSHA(true),
-                'committer' => $rev->getCommitter()->getName(),
-                'message' => $rev->getMessage()->getFullMessage(),
-                'dirty' => $dirty,
-            );
+            $output             = $revToArray($rev);
+            $output['active']   = ($rev->getCommit()->getSha() == $headSHA);
+            $output['inbranch'] = true;
+            $outputs[]          = $output;
+        }
+        if (!isset($revisions[$headSHA])) {
+            $output             = $revToArray(new Revision($head));
+            $output['active']   = true;
+            $output['inbranch'] = false;
+            array_unshift($outputs, $output);
         }
 
-        return new JsonResponse(array_values($outputs));
+        return new JsonResponse(array(
+            'latest' => $latest,
+            'dirty' => $dirty,
+            'revisions' => array_values($outputs)
+        ));
     }
 
     public function refresh(Request $request, $ctxid)
