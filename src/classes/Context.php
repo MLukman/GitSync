@@ -333,7 +333,8 @@ class Context implements SecuredAccessInterface, \Serializable
             $repo->checkout($this->branch_name);
         } elseif ($refSha == $this->getRemoteHead()->getSha()) {
             // merge fast-forward
-            $repo->checkout($this->branch_name)->merge(new RemoteBranch($repo, $this->remote_name, $this->branch_name), null, 'ff-only');
+            $repo->checkout($this->branch_name);
+            $repo->pull($this->remote_name, $this->branch_name, true);
         } else {
             // to avoid detached head, create/re-create branch when checkout a commit
             if ($repo->getBranch(self::GS_BRANCH)) {

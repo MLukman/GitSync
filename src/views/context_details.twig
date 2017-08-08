@@ -2,6 +2,29 @@
 
 {% extends "content.twig" %}
 
+{% set unsync = (modifications|length > 0) %}
+
+{% block belowtopmenu %}
+	<div id="pagetab" class="ui tabular large menu" style="margin: 0; padding: 5px 2em 0 2em; background-color: #e0e0ff;">
+		<a class="{% if not unsync %}active {% endif %} item" data-tab="info"><i class="ui info icon"></i> Info
+			{% if context.isDirty() %}
+				<div class="ui red label"><i class="warning sign icon"></i>Unsync</div>
+			{% endif %}
+			{% if not context.isLatest() %}
+				<div class="ui orange label"><i class="warning sign icon"></i>Outdated</div>
+			{% endif %}
+		</a>
+		{% if unsync %}
+			<a class="active item" data-tab="unsync"><i class="warning sign icon"></i> Unsync <span class="ui red circular tiny label">{{modifications|length}}</span></a>
+			{% endif %}
+		<a class="item" data-tab="revisions"><i class="tag icon"></i> Revisions</a>
+		{% if auditlog %}
+			<a class="item" data-tab="auditlog"><i class="clock icon"></i> Audit Log</a>
+		{% endif %}
+	</div>
+	<div style="height: 0.5em; background-color: white"></div>
+{% endblock %}
+
 {% block content %}
 	<script>
 		var formatDate = (d, f) => f.replace(/{(.+?):?(\d*)}/g, (v, c, p) => {
@@ -66,27 +89,7 @@
 			);
 	</script>
 
-	{% set unsync = (modifications|length > 0) %}
-
-	<div id="pagetab" class="ui pointing menu large">
-		<a class="{% if not unsync %}active {% endif %} item" data-tab="info">Info
-			{% if context.isDirty() %}
-				<div class="ui red label"><i class="warning sign icon"></i>Unsync</div>
-			{% endif %}
-			{% if not context.isLatest() %}
-				<div class="ui orange label"><i class="warning sign icon"></i>Outdated</div>
-			{% endif %}
-		</a>
-		{% if unsync %}
-			<a class="active item" data-tab="unsync">Unsync <span class="ui red circular tiny label">{{modifications|length}}</span></a>
-			{% endif %}
-		<a class="item" data-tab="revisions">Revisions</a>
-		{% if auditlog %}
-			<a class="item" data-tab="auditlog">Audit Log</a>
-		{% endif %}
-	</div>
-
-	<div class="ui tab active basic segment" data-tab="info">
+	<div class="ui tab active" data-tab="info">
 		{% set info = { 
 			'Local Path': context.getPath(),
 			'Remote Repository': context.getRemoteURL(), 
@@ -113,7 +116,7 @@
 		</div>
 	{% endif %}
 
-	<div class="ui tab basic segment" data-tab="revisions">
+	<div class="ui tab" data-tab="revisions">
 		{% if true or app.securilex.isGranted('prefix','context_refresh') %}
 			<form style="padding-bottom: 10pt" method="get" action="{{app.path('context_refresh', {'ctxid': ctxid})}}" onsubmit="$('#dimmer_refresh').dimmer('show');
 					return true;">
@@ -137,7 +140,7 @@
 	</div>
 
 	{% if auditlog %}
-		<div class="ui tab basic segment" data-tab="auditlog">
+		<div class="ui tab" data-tab="auditlog">
 			<p>The following events have occurred via GitSync:</p>
 			<table class="ui celled striped sortable orange table">
 				<thead>
@@ -175,4 +178,10 @@
 			</div>
 		</div>
 	</div>
+
+	<style>
+		#revisions tbody .active {
+			background-color: #e0e0ff !important;
+		}
+	</style>
 {% endblock %}

@@ -1,7 +1,6 @@
 {% extends "content.twig" %}
 
 {% block content %}
-	<p></p>
 	<a class="ui primary button" href="{{app.path('config_user_add')}}"><i class="plus icon"></i> Add User</a>
 	<p></p>
 	<form class="ui form {% if error is defined and error %}error{% endif %}" method="POST">
