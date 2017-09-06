@@ -15,6 +15,7 @@ class RootControllerProvider implements \Silex\ControllerProviderInterface
 
         $controllers->get('/ctx/{ctxid}/init/', 'context.controller:init')->bind('context_init');
         $controllers->get('/ctx/{ctxid}/sync/{ref}', 'context.controller:presync')->bind('context_presync');
+        $controllers->get('/ctx/{ctxid}/syncAjax/{ref}', 'context.controller:presyncAjax')->bind('context_presyncAjax');
         $controllers->post('/ctx/{ctxid}/sync/{ref}', 'context.controller:dosync')->bind('context_dosync');
         $controllers->get('/ctx/{ctxid}/refresh/', 'context.controller:refresh')->bind('context_refresh');
         $controllers->get('/ctx/{ctxid}/revisions/', 'context.controller:revisions')->bind('context_revisions');

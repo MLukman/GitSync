@@ -136,6 +136,43 @@ class Context extends \GitSync\Base\ContentController
         ));
     }
 
+    public function presyncAjax(Request $request, $ctxid, $ref)
+    {
+        $context = $this->getContext($ctxid);
+        $diff    = $context->getRepo()->getDiff($ref, 'HEAD');
+        return new JsonResponse(array(
+            'modifications' => $context->getModifications(true),
+            'diff' => $this->diffToArray($diff),
+        ));
+    }
+
+    protected function diffToArray(\GitElephant\Objects\Diff\Diff $diff)
+    {
+        $diffline = array(
+            'added' => '+ ',
+            'deleted' => '- ',
+            'unchanged' => '  ',
+        );
+        $outputs  = array();
+        foreach ($diff as $d) {
+            $output = array(
+                'mode' => $d->getMode(),
+                'orig_path' => $d->getOriginalPath(),
+                'dest_path' => $d->getDestinationPath(),
+                'chunks' => array(),
+            );
+            foreach ($d as $c) {
+                $chunk = array();
+                foreach ($c as $line) {
+                    $chunk[] = $diffline[$line->getType()].((string) $line);
+                }
+                $output['chunks'][] = implode("\n", $chunk);
+            }
+            $outputs[] = $output;
+        }
+        return $outputs;
+    }
+
     public function dosync(Request $request, $ctxid, $ref)
     {
         $context = $this->getContext($ctxid);

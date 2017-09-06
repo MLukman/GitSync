@@ -2,7 +2,7 @@
 
 namespace GitSync;
 
-class Modification
+class Modification implements \JsonSerializable
 {
     public $filename;
     public $status;
@@ -25,5 +25,14 @@ class Modification
                     filemtime($fullfilename));
             $this->mtime->setTimezone(new \DateTimeZone(\date_default_timezone_get()));
         }
+    }
+
+    public function jsonSerialize()
+    {
+        return array(
+            'filename' => $this->filename,
+            'status' => $this->status,
+            'modtime' => $this->mtime ? $this->mtime->format('Y-m-d H:i') : '-',
+        );
     }
 }

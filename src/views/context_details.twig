@@ -75,7 +75,7 @@
 									sync.append($('<div class="ui label green"><i class="check circle icon"></i>OK</div>'));
 								}
 							} else {
-								sync.append($('<a href="' + syncurl.replace('__ref__', data[i].ref) + '" class="ui button" />').append('Sync'));
+								sync.append($('<button onclick="presync(\'' + data[i].ref + '\')" class="ui button" />').append('Sync'));
 							}
 							tr.append(sync);
 		{% else %}
@@ -85,8 +85,79 @@
 						}
 					}
 				});
+			});
+
+			function presync(ref) {
+				var syncurl = "{{app.path('context_dosync', {'ctxid': ctxid, 'ref': '__ref__'})}}";
+				var presync = "{{app.path('context_presyncAjax', {'ctxid': ctxid, 'ref': '__ref__'})}}";
+				$('#sync_form').attr('action', syncurl.replace('__ref__', ref));
+				$('.presync_ref').text(ref);
+				$('#presync').modal('show');
+				$('#presync_content').text('Loading ...');
+				$.ajax(presync.replace('__ref__', ref), {
+					success: function (data, status, xhr) {
+						var statusMap = {
+							'': 'Staged',
+							'M': 'Modified',
+							'A': 'Added',
+							'D': 'Deleted',
+							'R': 'Renamed',
+							'C': 'Copied',
+							'?': 'New'
+						};
+						var area = $('#presync_content');
+						area.empty();
+						var accord = $('<div class="ui styled fluid accordion" />');
+						if (data.modifications.length > 0) {
+							var modthead = $('<thead><tr><th>Status</th><th>Filename with path</th><th>Modified</th></tr></thead>')
+							var modtbody = $('<tbody />');
+							for (var i = 0; i < data.modifications.length; i++) {
+								modtbody.append($('<tr />')
+										.append($('<td class="collapsing" />').text(statusMap[data.modifications[i].status]))
+										.append($('<td />').text(data.modifications[i].filename))
+										.append($('<td class="collapsing" />').text(data.modifications[i].modtime))
+										);
+							}
+							var item = $('<div class="title">').append($('<i class="dropdown icon"></i>')).append($('<span />').text('All untracked changes in the directory will be reverted'));
+							var modtable = $('<table class="ui celled striped compact red table" />')
+									.append(modthead).append(modtbody);
+							var content = $('<div class="content" />').append(modtable);
+							accord.append(item).append(content);
+						}
+						for (var i = 0; i < data.diff.length; i++) {
+							var item = $('<div class="title">').append($('<i class="dropdown icon"></i>'));
+							var desc = '';
+							switch (data.diff[i].mode) {
+								case 'renamed_file':
+									desc = data.diff[i].orig_path + ' will be renamed as ' + data.diff[i].dest_path;
+									break;
+								case 'new_file':
+									desc = data.diff[i].orig_path + ' will be added';
+									break;
+								case 'deleted_file':
+									desc = data.diff[i].orig_path + ' will be deleted';
+									break;
+								default:
+									desc = data.diff[i].orig_path + ' will be modified';
+							}
+							item.append($('<span />').text(desc));
+							var content = $('<div class="content" />');
+							for (var j = 0; j < data.diff[i].chunks.length; j++) {
+								content.append($('<p />').text('Chunk #' + (j + 1)));
+								content.append($('<pre class="ui segment" />').text(data.diff[i].chunks[j]));
+							}
+							accord.append(item).append(content);
+						}
+						area.append(accord);
+						accord.accordion({
+							onOpen: function () {
+								$('#presync').modal('refresh');
+							}
+						});
+						$('#presync').modal('refresh');
+					}
+				});
 			}
-			);
 	</script>
 
 	<div class="ui tab active" data-tab="info">
@@ -179,9 +250,29 @@
 		</div>
 	</div>
 
+	<div class="ui modal scrolling" id="presync">
+		<div class="header">
+			Upon syncing with <span class="presync_ref"></span>, the followings will occur:
+		</div>
+		<div class="scrolling content" id="presync_content">
+		</div>
+		<div class="actions">
+			<form id="sync_form" action="/GitSync/ctx/GS/sync/1.0.0" method="post" onsubmit="return confirm('Sync with 1.0.0?');">
+				<input type="hidden" name="redirect" value="/GitSync/ctx/GS/#/revisions">
+				<input type="hidden" name="ref" value="1.0.0">
+				<input type="submit" class="ui primary button" value="Proceed to Sync">
+				<button class="ui cancel button secondary" onclick="return false">Cancel</button>
+			</form>
+		</div>
+	</div>
+
 	<style>
 		#revisions tbody .active {
 			background-color: #e0e0ff !important;
+		}
+
+		pre {
+			overflow: auto;
 		}
 	</style>
 {% endblock %}
