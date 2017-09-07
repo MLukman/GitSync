@@ -27,6 +27,7 @@
 
 {% block content %}
 	<script>
+		var syncref;
 		var formatDate = (d, f) => f.replace(/{(.+?):?(\d*)}/g, (v, c, p) => {
 				for (v = d["get" + c]() + /h/.test(c) + ""; v.length < p; v = 0 + v)
 					;
@@ -88,6 +89,7 @@
 			});
 
 			function presync(ref) {
+				syncref = ref;
 				var syncurl = "{{app.path('context_dosync', {'ctxid': ctxid, 'ref': '__ref__'})}}";
 				var presync = "{{app.path('context_presyncAjax', {'ctxid': ctxid, 'ref': '__ref__'})}}";
 				$('#sync_form').attr('action', syncurl.replace('__ref__', ref));
@@ -157,6 +159,14 @@
 						$('#presync').modal('refresh');
 					}
 				});
+			}
+
+			function submitSync() {
+				if (!confirm('Sync with ' + syncref + '?'))
+					return false;
+				$('#presync').modal('hide');
+				$('#dimmer_sync').dimmer('show');
+				return true;
 			}
 	</script>
 
@@ -250,6 +260,18 @@
 		</div>
 	</div>
 
+	<div id="dimmer_sync" class="ui page dimmer">
+		<div class="content">
+			<div class="center">
+				<h2 class="ui inverted icon header">
+					<i class="download icon"></i>
+					Sync in progress
+					<div class="sub header">Please wait for a while ...</div>
+				</h2>
+			</div>
+		</div>
+	</div>
+
 	<div class="ui modal scrolling" id="presync">
 		<div class="header">
 			Upon syncing with <span class="presync_ref"></span>, the followings will occur:
@@ -257,11 +279,10 @@
 		<div class="scrolling content" id="presync_content">
 		</div>
 		<div class="actions">
-			<form id="sync_form" action="/GitSync/ctx/GS/sync/1.0.0" method="post" onsubmit="return confirm('Sync with 1.0.0?');">
-				<input type="hidden" name="redirect" value="/GitSync/ctx/GS/#/revisions">
-				<input type="hidden" name="ref" value="1.0.0">
-				<input type="submit" class="ui primary button" value="Proceed to Sync">
-				<button class="ui cancel button secondary" onclick="return false">Cancel</button>
+			<form id="sync_form" action="" method="post" onSubmit="return submitSync()">
+				<input type="hidden" name="redirect" value="{{app.path('context_details', {'ctxid': ctxid})}}#/revisions" />
+				<input type="submit" class="ui primary button" value="Proceed to Sync" />
+				<a href="javascript:$('#presync').modal('hide')" class="ui button secondary">Cancel</a>
 			</form>
 		</div>
 	</div>
