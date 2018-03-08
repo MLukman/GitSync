@@ -1,6 +1,6 @@
 {
 	"name": "mlukman/gitsync",
-	"license": "GPL",
+	"license": "GPL-1.0-or-later",
 	"type": "project",
 	"description": "GitSync allows system admin to sync contents of a directory with a specific branch of a Git repository.",
 	"keywords": ["git", "sync"],
