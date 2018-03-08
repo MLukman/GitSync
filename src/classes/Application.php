@@ -72,6 +72,11 @@ class Application extends \Silex\Application
         $app->register(new UrlGeneratorServiceProvider());
         $app->register(new ServiceControllerServiceProvider());
         $app->register(new SessionServiceProvider());
+
+        if (ini_get('session.save_handler') != 'files') {
+            $app['session.storage.handler'] = null;
+        }
+
         $app->register(new MonologServiceProvider(), array(
             'monolog.logfile' => $logdir.'/application.log',
             'monolog.level' => Logger::WARNING,

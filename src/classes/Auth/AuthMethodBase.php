@@ -12,12 +12,18 @@ abstract class AuthMethodBase
     /**
      * @return string Friendly name of the authentication method
      */
-    abstract static public function getName();
+    static public function getName()
+    {
+        return basename(get_class());
+    }
 
     /**
      * @return array Parameters = array of array(id, label, placeholder)
      */
-    abstract static public function getParamConfigs();
+    static public function getParamConfigs()
+    {
+        return array();
+    }
 
     /**
      * Check if params are valid.
@@ -26,7 +32,10 @@ abstract class AuthMethodBase
      * @param array $params
      * @return array|null
      */
-    abstract static public function checkParams(array $params);
+    static public function checkParams(array $params)
+    {
+        return null;
+    }
 
     public function __construct(array $params)
     {
