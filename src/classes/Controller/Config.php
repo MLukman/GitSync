@@ -2,6 +2,7 @@
 
 namespace GitSync\Controller;
 
+use GitSync\Application;
 use GitSync\Base\ContentController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -9,7 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 class Config extends ContentController
 {
 
-    public function __construct(\GitSync\Application $app)
+    public function __construct(Application $app)
     {
         parent::__construct($app);
         $this->setCurrent($app->path('config_contexts'));
@@ -55,9 +56,7 @@ class Config extends ContentController
                     break;
                 }
 
-                $repo = new \GitElephant\Repository($path, new \GitElephant\GitBinary(
-                    (strncasecmp(PHP_OS, 'WIN', 3) == 0) ?
-                    '"C:\Program Files\Git\bin\git.exe"' : null));
+                $repo = new \GitElephant\Repository($path, Application::newGitBinary());
 
                 $remote = null;
                 try {

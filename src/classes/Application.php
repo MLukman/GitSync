@@ -221,4 +221,24 @@ class Application extends \Silex\Application
         $app['debug'] = $debug;
         $app->run();
     }
+
+    static public function newGitBinary()
+    {
+        $gitpath = null;
+        if (strncasecmp(PHP_OS, 'WIN', 3) == 0) {
+            $gitpath = '"C:\Program Files\Git\bin\git.exe"';
+        } else {
+            // unix only!
+            foreach (array('/usr/bin/git') as $path) {
+                if (file_exists($path)) {
+                    $gitpath = $path;
+                    break;
+                }
+            }
+            if (empty($gitpath)) {
+                $gitpath = exec('which git');
+            }
+        }
+        return new \GitElephant\GitBinary($gitpath);
+    }
 }

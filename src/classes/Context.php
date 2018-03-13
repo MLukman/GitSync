@@ -4,10 +4,10 @@ namespace GitSync;
 
 include_once __DIR__.'/../constants.php';
 
-use GitElephant\GitBinary;
 use GitElephant\Objects\Commit;
 use GitElephant\Objects\Remote;
 use Securilex\Authorization\SecuredAccessInterface;
+use Securilex\Authorization\SecuredAccessTrait;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -17,7 +17,7 @@ use Symfony\Component\Filesystem\Filesystem;
 class Context implements SecuredAccessInterface, \Serializable
 {
 
-    use \Securilex\Authorization\SecuredAccessTrait;
+    use SecuredAccessTrait;
     /**
      * The temporary branch name to create if user sync with a commit that is not a head of any branch
      */
@@ -173,12 +173,7 @@ class Context implements SecuredAccessInterface, \Serializable
     public function getRepo()
     {
         if (!$this->repo) {
-            $gitbin = null;
-            if (strncasecmp(PHP_OS, 'WIN', 3) == 0) {
-                $gitbin = '"C:\Program Files\Git\bin\git.exe"';
-            }
-
-            $this->repo = new Repository($this->path, new GitBinary($gitbin));
+            $this->repo = new Repository($this->path, Application::newGitBinary());
         }
         return $this->repo;
     }
@@ -471,8 +466,7 @@ class Context implements SecuredAccessInterface, \Serializable
                 $modifications[] = new Modification($this, $status, $path);
                 $fullpath        = \realpath($context->getPath().'/'.$path.$status->getName());
                 if ($recursive && file_exists($fullpath.'/.git')) {
-                    $subrepo = new Repository($fullpath, new GitBinary(strncasecmp(PHP_OS, 'WIN', 3)
-                        == 0 ? '"C:\Program Files\Git\bin\git.exe"' : null));
+                    $subrepo = new Repository($fullpath, Application::newGitBinary());
                     $recurse_find($subrepo, str_replace('\\', '/', substr($fullpath, 1
                                 + strlen($context->getPath()))).'/');
                 }
